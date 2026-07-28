@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>IPAokay Dashboard</title>
-<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0%25' stop-color='%23e3a857'/%3E%3Cstop offset='100%25' stop-color='%23b8651a'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='32' height='32' rx='7' fill='url(%23g)'/%3E%3Ctext x='16' y='23' font-size='18' text-anchor='middle'%3E%F0%9F%8D%BA%3C/text%3E%3C/svg%3E">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0%25' stop-color='%23e3a857'/%3E%3Cstop offset='100%25' stop-color='%23b8651a'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='32' height='32' rx='7' fill='url(%23g)'/%3E%3Cpath d='M10 9h9v13a2 2 0 0 1-2 2h-5a2 2 0 0 1-2-2V9z' fill='white' opacity='.92'/%3E%3Cpath d='M19 12h2a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2h-2' fill='none' stroke='white' stroke-width='1.6'/%3E%3Cline x1='10' y1='13' x2='19' y2='13' stroke='%23b8651a' stroke-width='1.2' opacity='.5'/%3E%3C/svg%3E">
 <meta name="theme-color" content="#ffffff">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -37,7 +37,14 @@
 }
 *{box-sizing:border-box}
 html,body{height:100%}
-body{margin:0;font-family:var(--font-family);color:var(--text);background:var(--surface);-webkit-font-smoothing:antialiased}
+body{
+  margin:0;font-family:var(--font-family);color:var(--text);-webkit-font-smoothing:antialiased;
+  background:
+    radial-gradient(1100px 550px at 12% -8%, rgba(217,130,43,.08), transparent 60%),
+    radial-gradient(900px 480px at 88% 0%, rgba(91,122,58,.07), transparent 55%),
+    var(--surface);
+  background-attachment:fixed;
+}
 .material-symbols-rounded{font-variation-settings:'FILL' 0,'wght' 500,'GRAD' 0,'opsz' 20;font-size:18px;line-height:1;vertical-align:-4px;user-select:none}
 button{font-family:inherit;cursor:pointer}
 input,select{font-family:inherit}
@@ -48,8 +55,10 @@ a{color:var(--accent-dark)}
 
 /* ---- topbar ---- */
 #topbar{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:12px 22px;background:var(--card);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:20;flex-wrap:wrap}
+#topbar::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--accent),var(--hop),var(--accent-dark))}
 .brand{display:flex;align-items:center;gap:9px;font-weight:800;font-size:16px;letter-spacing:-.01em}
-.brand .mark{width:26px;height:26px;border-radius:7px;background:linear-gradient(135deg,var(--accent),var(--accent-dark));display:flex;align-items:center;justify-content:center;font-size:14px}
+.brand .mark{width:27px;height:27px;border-radius:8px;background:linear-gradient(135deg,var(--accent),var(--accent-dark));display:flex;align-items:center;justify-content:center;font-size:14px;box-shadow:0 2px 6px rgba(184,101,26,.35)}
+.brand .mark .material-symbols-rounded{color:#fff;font-size:16px;vertical-align:0;font-variation-settings:'FILL' 1,'wght' 500}
 .tabs{display:flex;gap:2px;background:var(--surface);border-radius:var(--radius-sm);padding:3px}
 .tab-btn{border:none;background:none;font-family:var(--font-family);font-size:13px;font-weight:700;color:var(--muted);padding:7px 15px;border-radius:6px;display:inline-flex;align-items:center;gap:6px;transition:color .15s}
 .tab-btn.active{background:var(--card);color:var(--text);box-shadow:var(--shadow)}
@@ -74,18 +83,26 @@ a{color:var(--accent-dark)}
 /* ---- cards / kpis ---- */
 .kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:10px}
 @media (max-width:900px){.kpis{grid-template-columns:repeat(2,1fr)}}
-.kpi{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:13px 15px;box-shadow:var(--shadow)}
+.kpi{background:var(--card);border:1px solid var(--border);border-left:3px solid var(--border-strong);border-radius:var(--radius);padding:13px 15px;box-shadow:var(--shadow);transition:transform .15s ease,box-shadow .15s ease}
+.kpi:hover{transform:translateY(-2px);box-shadow:0 2px 4px rgba(15,23,42,.06),0 10px 20px rgba(15,23,42,.08)}
+.kpi:nth-child(1){border-left-color:var(--accent)}
+.kpi:nth-child(2){border-left-color:var(--hop)}
+.kpi:nth-child(3){border-left-color:var(--good)}
+.kpi:nth-child(4){border-left-color:#b6558c}
+.kpi:nth-child(5){border-left-color:#7a5c9e}
 .kpi .lbl{font-size:10.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.4px}
-.kpi .val{font-size:22px;font-weight:800;margin-top:3px;letter-spacing:-.02em}
+.kpi .val{font-size:23px;font-weight:800;margin-top:3px;letter-spacing:-.02em}
 .kpi .sub{font-size:10.5px;color:var(--good);font-weight:700;margin-top:2px}
 
 .row{display:grid;grid-template-columns:1.3fr 1fr;gap:14px}
 @media (max-width:900px){.row{grid-template-columns:1fr}}
-.card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:16px 18px;box-shadow:var(--shadow)}
-.card h3{font-size:13.5px;font-weight:800;margin:0 0 2px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:16px 18px;box-shadow:var(--shadow);transition:transform .15s ease,box-shadow .15s ease}
+.card:hover{transform:translateY(-2px);box-shadow:0 2px 4px rgba(15,23,42,.06),0 10px 24px rgba(15,23,42,.09)}
+.card h3{font-size:13.5px;font-weight:800;margin:0 0 2px;display:flex;align-items:center;gap:6px;letter-spacing:-.01em}
+.card h3 .material-symbols-rounded{font-size:16px;color:var(--accent);vertical-align:0}
 .card .cap{font-size:11px;color:var(--muted);margin:0 0 12px}
 .chart-wrap{position:relative;height:220px}
-.chart-wrap.short{height:160px}
+.chart-wrap.short{height:170px}
 
 /* ---- gallery ---- */
 .gallery{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:10px}
@@ -131,12 +148,18 @@ table.dt tr:hover td{background:var(--surface)}
 .legend{display:flex;flex-wrap:wrap;gap:10px;margin-top:10px;font-size:10.5px;color:var(--muted)}
 .legend span{display:inline-flex;align-items:center;gap:5px}
 .legend .dot{width:8px;height:8px;border-radius:50%}
+
+/* ---- heatmap (sweet spot) ---- */
+.heatmap{display:grid;grid-template-columns:52px repeat(6,1fr);gap:4px;align-items:stretch}
+.heatmap-collabel{text-align:center;font-size:9.5px;font-weight:700;color:var(--muted);padding-bottom:2px}
+.heatmap-rowlabel{font-size:9.5px;font-weight:700;color:var(--muted);display:flex;align-items:center;justify-content:flex-end;padding-right:4px;text-align:right}
+.heatmap-cell{aspect-ratio:1;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:var(--accent-dark);border:1px solid var(--border)}
 </style>
 </head>
 <body>
 <div id="app">
   <div id="topbar">
-    <div class="brand"><span class="mark">🍺</span> IPAokay Dashboard</div>
+    <div class="brand"><span class="mark"><span class="material-symbols-rounded">sports_bar</span></span> IPAokay Dashboard</div>
     <div class="tabs" id="tabs">
       <button class="tab-btn active" data-tab="overview"><span class="material-symbols-rounded">insights</span>Overview</button>
       <button class="tab-btn" data-tab="beers"><span class="material-symbols-rounded">nutrition</span>Beers</button>
@@ -160,30 +183,30 @@ table.dt tr:hover td{background:var(--surface)}
       <div class="kpis" id="kpis"></div>
       <div class="row">
         <div class="card">
-          <h3>Rating distribution</h3>
+          <h3><span class="material-symbols-rounded">bar_chart</span>Rating distribution</h3>
           <p class="cap">Count of rated beers per 10-point band</p>
           <div class="chart-wrap"><canvas id="chartHistogram"></canvas></div>
         </div>
         <div class="card">
-          <h3>ABV vs rating</h3>
+          <h3><span class="material-symbols-rounded">scatter_plot</span>ABV vs rating</h3>
           <p class="cap">Coloured by style family — <span id="correlationLabel"></span></p>
           <div class="chart-wrap"><canvas id="chartScatter"></canvas></div>
         </div>
       </div>
       <div class="row">
         <div class="card">
-          <h3>Top style families</h3>
+          <h3><span class="material-symbols-rounded">category</span>Top style families</h3>
           <p class="cap">By volume, with average rating</p>
           <div class="taglist" id="familyList"></div>
         </div>
         <div class="card">
-          <h3>Brewery leaderboard</h3>
+          <h3><span class="material-symbols-rounded">military_tech</span>Brewery leaderboard</h3>
           <p class="cap">Top by average rating (min. 3 beers logged)</p>
           <table class="dt"><thead><tr><th></th><th>Brewery</th><th>Beers</th><th>Avg</th></tr></thead><tbody id="leaderboardBody"></tbody></table>
         </div>
       </div>
       <div class="card">
-        <h3>Recently logged</h3>
+        <h3><span class="material-symbols-rounded">photo_library</span>Recently logged</h3>
         <p class="cap">Latest photographed beers</p>
         <div class="gallery" id="recentGallery"></div>
       </div>
@@ -211,7 +234,7 @@ table.dt tr:hover td{background:var(--surface)}
       </div>
       <div class="card" id="beersTableCard">
         <table class="dt">
-          <thead><tr><th>Beer</th><th>Brewery</th><th>Style</th><th>ABV</th><th>Rating</th><th>Status</th></tr></thead>
+          <thead><tr><th>Beer</th><th>Brewery</th><th>Style</th><th>ABV</th><th>Rating</th></tr></thead>
           <tbody id="beersTableBody"></tbody>
         </table>
         <div class="pager">
@@ -245,12 +268,12 @@ table.dt tr:hover td{background:var(--surface)}
       <div class="row">
         <div class="card">
           <table class="dt">
-            <thead><tr><th>Brewery</th><th>Beers</th><th>Avg rating</th><th>Location</th><th>Affiliate</th></tr></thead>
+            <thead><tr><th>Brewery</th><th>Beers</th><th>Avg rating</th><th>Location</th></tr></thead>
             <tbody id="breweriesTableBody"></tbody>
           </table>
         </div>
         <div class="card">
-          <h3>Top locations</h3>
+          <h3><span class="material-symbols-rounded">location_on</span>Top locations</h3>
           <p class="cap">By brewery count</p>
           <div class="taglist" id="locationList"></div>
         </div>
@@ -260,26 +283,38 @@ table.dt tr:hover td{background:var(--surface)}
     <div class="view" id="view-trends">
       <div class="row">
         <div class="card">
-          <h3>Beers logged per month</h3>
+          <h3><span class="material-symbols-rounded">calendar_month</span>Beers logged per month</h3>
           <p class="cap">By Created time</p>
           <div class="chart-wrap"><canvas id="chartMonthly"></canvas></div>
         </div>
         <div class="card">
-          <h3>Average rating over time</h3>
+          <h3><span class="material-symbols-rounded">show_chart</span>Average rating over time</h3>
           <p class="cap">Palate drift check — pickier or more generous lately?</p>
           <div class="chart-wrap"><canvas id="chartMonthlyRating"></canvas></div>
         </div>
       </div>
       <div class="row">
         <div class="card">
-          <h3>Content pipeline</h3>
-          <p class="cap">Photograph &amp; Content status across all beers</p>
-          <div class="chart-wrap short"><canvas id="chartFunnel"></canvas></div>
+          <h3><span class="material-symbols-rounded">stacked_line_chart</span>Style trends over time</h3>
+          <p class="cap">Monthly volume of your top 4 style families</p>
+          <div class="chart-wrap"><canvas id="chartFamilyTrends"></canvas></div>
         </div>
         <div class="card">
-          <h3>Affiliate programme</h3>
-          <p class="cap">Breweries by affiliate status</p>
-          <div class="chart-wrap short"><canvas id="chartAffiliate"></canvas></div>
+          <h3><span class="material-symbols-rounded">explore</span>Discovery vs. loyalty</h3>
+          <p class="cap">Cumulative beers logged vs. unique breweries tried</p>
+          <div class="chart-wrap"><canvas id="chartDiscovery"></canvas></div>
+        </div>
+      </div>
+      <div class="row">
+        <div class="card">
+          <h3><span class="material-symbols-rounded">grid_view</span>The sweet spot</h3>
+          <p class="cap">Where ABV and rating cluster — darker = more beers</p>
+          <div id="sweetSpotGrid"></div>
+        </div>
+        <div class="card">
+          <h3><span class="material-symbols-rounded">balance</span>Brewery consistency</h3>
+          <p class="cap">Avg rating vs. spread (min. 3 rated beers) — bottom-right is reliably great, top is hit-or-miss</p>
+          <div class="chart-wrap"><canvas id="chartConsistency"></canvas></div>
         </div>
       </div>
     </div>
@@ -294,6 +329,12 @@ const FAMILY_COLORS = {
   'Wheat & German':'#5b7a3a','Alcohol-free':'#2383e2','Other':'#8a8272'
 };
 function familyColor(f){ return FAMILY_COLORS[f] || FAMILY_COLORS['Other']; }
+
+if (window.Chart) {
+  Chart.defaults.font.family = "'Plus Jakarta Sans', sans-serif";
+  Chart.defaults.color = '#6b6255';
+  Chart.defaults.font.size = 11;
+}
 
 let DATA = { beers: [], breweries: [] };
 let charts = {};
@@ -391,8 +432,10 @@ function renderAll(){
   renderLocationList();
   renderMonthly();
   renderMonthlyRating();
-  renderFunnel();
-  renderAffiliate();
+  renderFamilyTrends();
+  renderDiscoveryLoyalty();
+  renderSweetSpot();
+  renderBreweryConsistency();
 }
 
 function computeBreweryStats(){
@@ -517,7 +560,7 @@ function renderRecentGallery(){
 
 function beerCardHtml(b){
   const brewery = window.breweryById[(b.breweryIds||[])[0]];
-  const img = b.imageCached ? `<img src="/img/${b.id}" loading="lazy" alt="">` : '🍺';
+  const img = b.imageCached ? `<img src="/img/${b.id}" loading="lazy" alt="">` : '<span class="material-symbols-rounded" style="font-size:22px;color:var(--muted)">local_bar</span>';
   return `<div class="gcard"><div class="gimg">${img}</div><div class="gmeta">
     <div class="gname" title="${esc(b.name)}">${esc(b.name)}</div>
     <div class="gsub">${brewery ? esc(brewery.name)+' · ' : ''}${b.rating ?? '—'}</div>
@@ -575,18 +618,14 @@ function renderBeersTable(){
   const page = rows.slice(beersPage*PAGE_SIZE, beersPage*PAGE_SIZE + PAGE_SIZE);
   $('#beersTableBody').innerHTML = page.map(b => {
     const brewery = window.breweryById[(b.breweryIds||[])[0]];
-    const statusPill = b.content === 'Posted' ? `<span class="pill good">Posted</span>`
-      : b.photograph === 'Photographed' ? `<span class="pill amber">Photographed</span>`
-      : `<span class="pill muted">${esc(b.photograph||'—')}</span>`;
     return `<tr>
       <td>${b.beerLink ? `<a href="${b.beerLink}" target="_blank" rel="noopener">${esc(b.name)}</a>` : `<strong>${esc(b.name)}</strong>`}</td>
       <td>${brewery ? esc(brewery.name) : '—'}</td>
       <td><span class="tagchip"><span class="tagdot" style="background:${familyColor(b.brewTagFamily)}"></span>${esc(b.brewTag||'—')}</span></td>
       <td>${fmtPct(b.abv)}</td>
       <td>${b.rating ?? '—'}</td>
-      <td>${statusPill}</td>
     </tr>`;
-  }).join('') || '<tr><td colspan="6" style="color:var(--muted)">No beers match these filters.</td></tr>';
+  }).join('') || '<tr><td colspan="5" style="color:var(--muted)">No beers match these filters.</td></tr>';
   $('#beersPageLabel').textContent = `Page ${beersPage+1} of ${totalPages} (${rows.length} beers)`;
   $('#beersPrev').disabled = beersPage === 0;
   $('#beersNext').disabled = beersPage >= totalPages - 1;
@@ -631,9 +670,8 @@ function renderBreweriesTable(){
       <td>${b._count||0}</td>
       <td>${b._avgRating != null ? `<span class="pill ${b._avgRating>=80?'good':'amber'}">${b._avgRating.toFixed(0)}</span>` : '—'}</td>
       <td>${esc(b.location||'—')}</td>
-      <td>${b.affiliate === 'Affiliate programme' ? '<span class="pill good">Affiliate</span>' : b.affiliate === 'Signed up' ? '<span class="pill amber">Signed up</span>' : '<span class="pill muted">None</span>'}</td>
     </tr>
-  `).join('') || '<tr><td colspan="5" style="color:var(--muted)">No breweries match these filters.</td></tr>';
+  `).join('') || '<tr><td colspan="4" style="color:var(--muted)">No breweries match these filters.</td></tr>';
 }
 $('#brewerySearch').addEventListener('input', renderBreweriesTable);
 $('#breweryMinBeers').addEventListener('change', renderBreweriesTable);
@@ -685,24 +723,108 @@ function renderMonthlyRating(){
   }, { plugins:{legend:{display:false}}, scales:{ y:{ grid:{color:'#ece9e2'} }, x:{grid:{display:false}} } });
 }
 
-function renderFunnel(){
-  const photoStatuses = ['Not started','Pending upload','Pending reshoot','Photographed','Drank on premises','Missed opportunity'];
-  const counts = {};
-  for (const s of photoStatuses) counts[s] = 0;
-  for (const b of DATA.beers) if (b.photograph in counts) counts[b.photograph]++;
-  drawChart('chartFunnel', 'bar', {
-    labels: photoStatuses,
-    datasets: [{ data: photoStatuses.map(s=>counts[s]), backgroundColor:'#d9822b', borderRadius:4 }]
-  }, { indexAxis:'y', plugins:{legend:{display:false}}, scales:{ x:{beginAtZero:true, grid:{color:'#ece9e2'}}, y:{grid:{display:false}} } });
+function renderFamilyTrends(){
+  const totals = {};
+  for (const b of DATA.beers) totals[b.brewTagFamily] = (totals[b.brewTagFamily]||0)+1;
+  const topFamilies = Object.entries(totals).sort((a,b)=>b[1]-a[1]).slice(0,4).map(e=>e[0]);
+  const months = [...new Set(DATA.beers.filter(b=>b.createdTime).map(b=>monthKey(b.createdTime)))].sort();
+  const datasets = topFamilies.map(family => {
+    const counts = {};
+    for (const b of DATA.beers) if (b.brewTagFamily === family && b.createdTime) {
+      const k = monthKey(b.createdTime);
+      counts[k] = (counts[k]||0)+1;
+    }
+    return { label: family, data: months.map(m => counts[m]||0), borderColor: familyColor(family), backgroundColor: familyColor(family), tension:.3, pointRadius:0, borderWidth:2, fill:false };
+  });
+  drawChart('chartFamilyTrends', 'line', { labels: months, datasets }, {
+    plugins:{ legend:{ position:'bottom', labels:{ boxWidth:9, font:{size:10.5} } } },
+    scales:{ y:{ beginAtZero:true, grid:{color:'#ece9e2'} }, x:{ grid:{display:false} } }
+  });
 }
 
-function renderAffiliate(){
-  const cats = ['No affiliate','Signed up','Affiliate programme'];
-  const counts = cats.map(c => DATA.breweries.filter(b => b.affiliate === c).length);
-  drawChart('chartAffiliate', 'doughnut', {
-    labels: cats,
-    datasets: [{ data: counts, backgroundColor: ['#ddd8cc','#e3a857','#5b7a3a'] }]
-  }, { plugins:{ legend:{ position:'bottom', labels:{ boxWidth:10, font:{size:11} } } } });
+function renderDiscoveryLoyalty(){
+  const sorted = DATA.beers.filter(b => b.createdTime).slice().sort((a,b) => new Date(a.createdTime) - new Date(b.createdTime));
+  const months = [...new Set(sorted.map(b => monthKey(b.createdTime)))].sort();
+  const seenBreweries = new Set();
+  const beerCumByMonth = {}, breweryCumByMonth = {};
+  let beerCum = 0, idx = 0;
+  for (const m of months) {
+    while (idx < sorted.length && monthKey(sorted[idx].createdTime) === m) {
+      beerCum++;
+      for (const bid of sorted[idx].breweryIds||[]) seenBreweries.add(bid);
+      idx++;
+    }
+    beerCumByMonth[m] = beerCum;
+    breweryCumByMonth[m] = seenBreweries.size;
+  }
+  drawChart('chartDiscovery', 'line', {
+    labels: months,
+    datasets: [
+      { label:'Cumulative beers', data: months.map(m=>beerCumByMonth[m]), borderColor:'#d9822b', backgroundColor:'#fbead4', tension:.3, pointRadius:0, borderWidth:2, fill:true, yAxisID:'y' },
+      { label:'Unique breweries tried', data: months.map(m=>breweryCumByMonth[m]), borderColor:'#5b7a3a', backgroundColor:'transparent', tension:.3, pointRadius:0, borderWidth:2, fill:false, yAxisID:'y1' },
+    ]
+  }, {
+    plugins:{ legend:{ position:'bottom', labels:{ boxWidth:9, font:{size:10.5} } } },
+    scales:{
+      y:{ beginAtZero:true, grid:{color:'#ece9e2'}, title:{display:true,text:'Beers',font:{size:10}} },
+      y1:{ beginAtZero:true, position:'right', grid:{display:false}, title:{display:true,text:'Breweries',font:{size:10}} },
+      x:{ grid:{display:false} }
+    }
+  });
+}
+
+function abvBandIndex(abv){
+  const pct = abv*100;
+  if (pct < 4) return 0; if (pct < 5) return 1; if (pct < 6) return 2;
+  if (pct < 7) return 3; if (pct < 8) return 4; return 5;
+}
+function renderSweetSpot(){
+  const abvLabels = ['<4%','4–5%','5–6%','6–7%','7–8%','8%+'];
+  const ratingBands = [ [90,100,'90-100'], [80,89,'80-89'], [70,79,'70-79'], [60,69,'60-69'], [0,59,'<60'] ];
+  const grid = ratingBands.map(() => new Array(6).fill(0));
+  for (const b of DATA.beers) {
+    if (b.abv == null || b.rating == null) continue;
+    const ai = abvBandIndex(b.abv);
+    const ri = ratingBands.findIndex(([lo,hi]) => b.rating >= lo && b.rating <= hi);
+    if (ri === -1) continue;
+    grid[ri][ai]++;
+  }
+  const max = Math.max(1, ...grid.flat());
+  let html = '<div class="heatmap"><div></div>' + abvLabels.map(l => `<div class="heatmap-collabel">${l}</div>`).join('');
+  ratingBands.forEach(([,,label], r) => {
+    html += `<div class="heatmap-rowlabel">${label}</div>`;
+    html += grid[r].map(count => {
+      const alpha = count ? (0.12 + 0.78 * count / max) : 0;
+      return `<div class="heatmap-cell" style="background:rgba(217,130,43,${alpha.toFixed(2)})">${count || ''}</div>`;
+    }).join('');
+  });
+  html += '</div>';
+  $('#sweetSpotGrid').innerHTML = html;
+}
+
+function renderBreweryConsistency(){
+  const ratingsByBrewery = {};
+  for (const beer of DATA.beers) {
+    if (beer.rating == null) continue;
+    for (const bid of beer.breweryIds||[]) (ratingsByBrewery[bid] ||= []).push(beer.rating);
+  }
+  const points = [];
+  for (const b of DATA.breweries) {
+    const ratings = ratingsByBrewery[b.id];
+    if (!ratings || ratings.length < 3) continue;
+    const avg = ratings.reduce((s,r)=>s+r,0)/ratings.length;
+    const stddev = Math.sqrt(ratings.reduce((s,r)=>s+(r-avg)**2,0)/ratings.length);
+    points.push({ x: avg, y: stddev, r: Math.min(16, 4 + ratings.length*0.6), name: b.name, count: ratings.length });
+  }
+  drawChart('chartConsistency', 'bubble', {
+    datasets: [{ data: points, backgroundColor:'rgba(217,130,43,.5)', borderColor:'#b8651a', borderWidth:1 }]
+  }, {
+    plugins:{ legend:{ display:false }, tooltip:{ callbacks:{ label: (ctx) => { const p = points[ctx.dataIndex]; return `${p.name}: avg ${p.x.toFixed(0)}, ±${p.y.toFixed(1)} (${p.count} beers)`; } } } },
+    scales:{
+      x:{ title:{ display:true, text:'Average rating' }, grid:{color:'#ece9e2'} },
+      y:{ title:{ display:true, text:'Rating spread (std dev)' }, grid:{color:'#ece9e2'} }
+    }
+  });
 }
 
 // ---------------- chart helper ----------------

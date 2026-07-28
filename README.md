@@ -39,12 +39,12 @@ Cloudflare dashboard → **Pages** → **Create application** → **Connect to G
 
 ```bash
 wrangler kv namespace create DASH_KV
-wrangler r2 bucket create ipaokay-dashboard-images
+wrangler r2 bucket create dash-images
 ```
 
 Copy the KV namespace id into `wrangler.toml` (`REPLACE_WITH_KV_NAMESPACE_ID`), then in the Pages project → **Settings → Functions**, bind:
 - KV namespace `DASH_KV` → the namespace you created
-- R2 bucket `DASH_IMAGES` → `ipaokay-dashboard-images`
+- R2 bucket `DASH_IMAGES` → `dash-images`
 
 ### 3. Set the Notion secret
 
