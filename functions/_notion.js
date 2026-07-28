@@ -67,7 +67,7 @@ export function getRelationIds(prop) {
   return (prop && prop.relation ? prop.relation.map((r) => r.id) : []) || [];
 }
 export function getFileUrl(prop) {
-  const file = prop && prop.file && prop.file[0];
+  const file = prop && prop.files && prop.files[0];
   if (!file) return null;
   if (file.type === 'file') return file.file.url;
   if (file.type === 'external') return file.external.url;
