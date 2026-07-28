@@ -14,7 +14,7 @@ NOTION_BREWERIES_DB_ID = "950e83c73ade492bb8aa5360951ea150"
 
 [[kv_namespaces]]
 binding = "DASH_KV"
-id = "REPLACE_WITH_KV_NAMESPACE_ID"
+id = "a3d7be18098a420faa2b981af7bc5928"
 
 [[r2_buckets]]
 binding = "DASH_IMAGES"
