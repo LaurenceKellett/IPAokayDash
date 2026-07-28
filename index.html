@@ -751,6 +751,14 @@ function beerCardHtml(b){
 
 function esc(s){ return (s||'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 
+// Notion URL fields are often stored without a protocol (e.g. "www.site.com"),
+// which browsers then treat as a relative path on this dashboard's own origin
+// instead of an external link. Force https:// so they always navigate out.
+function normalizeUrl(url){
+  if (!url) return null;
+  return /^https?:\/\//i.test(url) ? url : `https://${url}`;
+}
+
 // ---------------- sortable table headers ----------------
 function bindSortableHeaders(theadEl, sortState, defaultDirs, onChange){
   theadEl.querySelectorAll('th[data-field]').forEach(th => {
@@ -834,7 +842,7 @@ function renderBeersTable(){
   $('#beersTableBody').innerHTML = page.map(b => {
     const brewery = window.breweryById[(b.breweryIds||[])[0]];
     return `<tr>
-      <td>${b.beerLink ? `<a href="${b.beerLink}" target="_blank" rel="noopener">${esc(b.name)}</a>` : `<strong>${esc(b.name)}</strong>`}</td>
+      <td>${b.beerLink ? `<a href="${normalizeUrl(b.beerLink)}" target="_blank" rel="noopener">${esc(b.name)}</a>` : `<strong>${esc(b.name)}</strong>`}</td>
       <td>${brewery ? esc(brewery.name) : '—'}</td>
       <td><span class="tagchip"><span class="tagdot" style="background:${familyColor(b.brewTagFamily)}"></span>${esc(b.brewTag||'—')}</span></td>
       <td>${fmtPct(b.abv)}</td>
@@ -887,7 +895,7 @@ function breweryRowHtml(b){
   const expanded = expandedBreweries.has(b.id);
   const chevron = expanded ? 'expand_less' : 'expand_more';
   const mainRow = `<tr class="brewery-row" data-id="${b.id}">
-    <td><span class="material-symbols-rounded" style="font-size:16px;vertical-align:-3px;color:var(--muted)">${chevron}</span> <strong>${b.website ? `<a href="${b.website}" target="_blank" rel="noopener" onclick="event.stopPropagation()">${esc(b.name)}</a>` : esc(b.name)}</strong></td>
+    <td><span class="material-symbols-rounded" style="font-size:16px;vertical-align:-3px;color:var(--muted)">${chevron}</span> <strong>${b.website ? `<a href="${normalizeUrl(b.website)}" target="_blank" rel="noopener" onclick="event.stopPropagation()">${esc(b.name)}</a>` : esc(b.name)}</strong></td>
     <td>${b._count||0}</td>
     <td>${b._avgRating != null ? `<span class="pill ${b._avgRating>=80?'good':'amber'}">${b._avgRating.toFixed(0)}</span>` : '—'}</td>
     <td>${esc(b.location||'—')}</td>
