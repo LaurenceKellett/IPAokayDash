@@ -1,0 +1,12 @@
+{
+  "name": "ipaokay-dashboard",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "wrangler pages dev . --kv DASH_KV --r2 DASH_IMAGES",
+    "deploy": "wrangler pages deploy ."
+  },
+  "devDependencies": {
+    "wrangler": "^3.0.0"
+  }
+}

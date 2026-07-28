@@ -1,0 +1,718 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>IPAokay Dashboard</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0%25' stop-color='%23e3a857'/%3E%3Cstop offset='100%25' stop-color='%23b8651a'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='32' height='32' rx='7' fill='url(%23g)'/%3E%3Ctext x='16' y='23' font-size='18' text-anchor='middle'%3E%F0%9F%8D%BA%3C/text%3E%3C/svg%3E">
+<meta name="theme-color" content="#ffffff">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<style>
+:root{
+  --bg:#ffffff;
+  --surface:#f7f6f3;
+  --card:#ffffff;
+  --border:#ece9e2;
+  --border-strong:#ddd8cc;
+  --text:#221c14;
+  --muted:#6b6255;
+  --accent:#d9822b;
+  --accent-dark:#b8651a;
+  --accent-soft:#fbead4;
+  --hop:#5b7a3a;
+  --hop-soft:#eaf2e2;
+  --good:#1a7f43;
+  --good-soft:#eafbf0;
+  --error:#d93838;
+  --error-soft:#fff0f0;
+  --warning:#b45309;
+  --warning-soft:#fffbeb;
+  --shadow:0 1px 2px rgba(15,23,42,.04),0 4px 12px rgba(15,23,42,.06);
+  --radius:10px;
+  --radius-sm:7px;
+  --font-family:'Plus Jakarta Sans',-apple-system,BlinkMacSystemFont,sans-serif;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;font-family:var(--font-family);color:var(--text);background:var(--surface);-webkit-font-smoothing:antialiased}
+.material-symbols-rounded{font-variation-settings:'FILL' 0,'wght' 500,'GRAD' 0,'opsz' 20;font-size:18px;line-height:1;vertical-align:-4px;user-select:none}
+button{font-family:inherit;cursor:pointer}
+input,select{font-family:inherit}
+a{color:var(--accent-dark)}
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap}
+
+#app{min-height:100vh;display:flex;flex-direction:column}
+
+/* ---- topbar ---- */
+#topbar{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:12px 22px;background:var(--card);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:20;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:9px;font-weight:800;font-size:16px;letter-spacing:-.01em}
+.brand .mark{width:26px;height:26px;border-radius:7px;background:linear-gradient(135deg,var(--accent),var(--accent-dark));display:flex;align-items:center;justify-content:center;font-size:14px}
+.tabs{display:flex;gap:2px;background:var(--surface);border-radius:var(--radius-sm);padding:3px}
+.tab-btn{border:none;background:none;font-family:var(--font-family);font-size:13px;font-weight:700;color:var(--muted);padding:7px 15px;border-radius:6px;display:inline-flex;align-items:center;gap:6px;transition:color .15s}
+.tab-btn.active{background:var(--card);color:var(--text);box-shadow:var(--shadow)}
+.sync{display:flex;align-items:center;gap:9px;font-size:11.5px;font-weight:600;color:var(--muted)}
+.sync-dot{width:9px;height:9px;border-radius:50%;background:var(--warning);flex:none}
+.sync-dot.ok{background:var(--good)}
+.sync-dot.loading{animation:pulse 1s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+#syncBtn{font-size:12px;font-weight:700;color:#fff;background:var(--accent);border:none;padding:7px 13px;border-radius:var(--radius-sm);display:inline-flex;align-items:center;gap:5px}
+#syncBtn:hover{background:var(--accent-dark)}
+#syncBtn:disabled{opacity:.6;cursor:not-allowed}
+
+/* ---- layout ---- */
+.container{max-width:1180px;margin:0 auto;padding:20px 20px 40px;width:100%}
+.view{display:none;flex-direction:column;gap:16px}
+.view.active{display:flex}
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(12px);background:var(--text);color:#fff;padding:10px 18px;border-radius:var(--radius-sm);font-size:12.5px;font-weight:600;box-shadow:var(--shadow);opacity:0;pointer-events:none;transition:all .25s ease;z-index:50}
+.toast.visible{opacity:1;transform:translateX(-50%) translateY(0)}
+.empty{padding:60px 20px;text-align:center;color:var(--muted)}
+.empty .material-symbols-rounded{font-size:40px;display:block;margin:0 auto 10px}
+
+/* ---- cards / kpis ---- */
+.kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:10px}
+@media (max-width:900px){.kpis{grid-template-columns:repeat(2,1fr)}}
+.kpi{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:13px 15px;box-shadow:var(--shadow)}
+.kpi .lbl{font-size:10.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.4px}
+.kpi .val{font-size:22px;font-weight:800;margin-top:3px;letter-spacing:-.02em}
+.kpi .sub{font-size:10.5px;color:var(--good);font-weight:700;margin-top:2px}
+
+.row{display:grid;grid-template-columns:1.3fr 1fr;gap:14px}
+@media (max-width:900px){.row{grid-template-columns:1fr}}
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:16px 18px;box-shadow:var(--shadow)}
+.card h3{font-size:13.5px;font-weight:800;margin:0 0 2px}
+.card .cap{font-size:11px;color:var(--muted);margin:0 0 12px}
+.chart-wrap{position:relative;height:220px}
+.chart-wrap.short{height:160px}
+
+/* ---- gallery ---- */
+.gallery{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:10px}
+.gcard{background:var(--card);border:1px solid var(--border);border-radius:8px;overflow:hidden;box-shadow:var(--shadow)}
+.gimg{aspect-ratio:1;background:var(--hop-soft);display:flex;align-items:center;justify-content:center;font-size:24px;overflow:hidden}
+.gimg img{width:100%;height:100%;object-fit:cover}
+.gmeta{padding:7px 8px}
+.gname{font-size:11.5px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.gsub{font-size:10px;color:var(--muted)}
+
+/* ---- tables ---- */
+table.dt{width:100%;border-collapse:collapse;font-size:12.5px}
+table.dt th{text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.3px;color:var(--muted);font-weight:700;padding:0 10px 8px 0;cursor:pointer;white-space:nowrap}
+table.dt th:hover{color:var(--text)}
+table.dt td{padding:8px 10px 8px 0;border-top:1px solid var(--border);vertical-align:middle}
+table.dt tr:hover td{background:var(--surface)}
+.pill{display:inline-block;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700;white-space:nowrap}
+.pill.good{background:var(--good-soft);color:var(--good)}
+.pill.amber{background:var(--accent-soft);color:var(--accent-dark)}
+.pill.muted{background:var(--surface);color:var(--muted)}
+.tagchip{display:inline-flex;align-items:center;gap:5px;font-size:10.5px;font-weight:700}
+.tagdot{width:7px;height:7px;border-radius:50%;flex:none}
+
+/* ---- controls ---- */
+.controls{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.controls input[type=text],.controls select{border:1px solid var(--border-strong);background:var(--card);padding:7px 10px;font-size:12.5px;border-radius:var(--radius-sm);outline:none;font-family:var(--font-family)}
+.controls input[type=text]{min-width:160px}
+.controls input:focus,.controls select:focus{border-color:var(--text)}
+.viewtoggle{display:flex;gap:2px;background:var(--surface);border-radius:var(--radius-sm);padding:2px;margin-left:auto}
+.viewtoggle button{border:none;background:none;padding:6px 10px;border-radius:5px;color:var(--muted);font-size:11.5px;font-weight:700}
+.viewtoggle button.active{background:var(--card);color:var(--text);box-shadow:var(--shadow)}
+.pager{display:flex;align-items:center;gap:10px;font-size:11.5px;color:var(--muted);margin-top:10px}
+.pager button{border:1px solid var(--border-strong);background:var(--card);border-radius:6px;padding:5px 9px;font-size:11px;font-weight:700;color:var(--text)}
+.pager button:disabled{opacity:.4;cursor:not-allowed}
+
+.taglist{display:flex;flex-direction:column;gap:9px}
+.tagrow{display:flex;align-items:center;gap:8px;font-size:12px}
+.tagname{width:110px;flex:none;font-weight:700}
+.tagbar-track{flex:1;background:var(--surface);border-radius:5px;height:9px;overflow:hidden}
+.tagbar-fill{height:100%;border-radius:5px;background:var(--hop)}
+.tagval{width:70px;flex:none;text-align:right;color:var(--muted);font-weight:600;font-size:11px}
+
+.legend{display:flex;flex-wrap:wrap;gap:10px;margin-top:10px;font-size:10.5px;color:var(--muted)}
+.legend span{display:inline-flex;align-items:center;gap:5px}
+.legend .dot{width:8px;height:8px;border-radius:50%}
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="topbar">
+    <div class="brand"><span class="mark">🍺</span> IPAokay Dashboard</div>
+    <div class="tabs" id="tabs">
+      <button class="tab-btn active" data-tab="overview"><span class="material-symbols-rounded">insights</span>Overview</button>
+      <button class="tab-btn" data-tab="beers"><span class="material-symbols-rounded">nutrition</span>Beers</button>
+      <button class="tab-btn" data-tab="breweries"><span class="material-symbols-rounded">factory</span>Breweries</button>
+      <button class="tab-btn" data-tab="trends"><span class="material-symbols-rounded">trending_up</span>Trends</button>
+    </div>
+    <div class="sync">
+      <span class="sync-dot" id="syncDot"></span>
+      <span id="syncLabel">Loading…</span>
+      <button id="syncBtn"><span class="material-symbols-rounded" style="font-size:15px;vertical-align:-3px">sync</span>Sync now</button>
+    </div>
+  </div>
+
+  <div class="container">
+    <div id="emptyState" class="empty" style="display:none">
+      <span class="material-symbols-rounded">local_bar</span>
+      No data synced yet — click <strong>Sync now</strong> to pull the Beers and Breweries databases from Notion.
+    </div>
+
+    <div class="view active" id="view-overview">
+      <div class="kpis" id="kpis"></div>
+      <div class="row">
+        <div class="card">
+          <h3>Rating distribution</h3>
+          <p class="cap">Count of rated beers per 10-point band</p>
+          <div class="chart-wrap"><canvas id="chartHistogram"></canvas></div>
+        </div>
+        <div class="card">
+          <h3>ABV vs rating</h3>
+          <p class="cap">Coloured by style family — <span id="correlationLabel"></span></p>
+          <div class="chart-wrap"><canvas id="chartScatter"></canvas></div>
+        </div>
+      </div>
+      <div class="row">
+        <div class="card">
+          <h3>Top style families</h3>
+          <p class="cap">By volume, with average rating</p>
+          <div class="taglist" id="familyList"></div>
+        </div>
+        <div class="card">
+          <h3>Brewery leaderboard</h3>
+          <p class="cap">Top by average rating (min. 3 beers logged)</p>
+          <table class="dt"><thead><tr><th></th><th>Brewery</th><th>Beers</th><th>Avg</th></tr></thead><tbody id="leaderboardBody"></tbody></table>
+        </div>
+      </div>
+      <div class="card">
+        <h3>Recently logged</h3>
+        <p class="cap">Latest photographed beers</p>
+        <div class="gallery" id="recentGallery"></div>
+      </div>
+    </div>
+
+    <div class="view" id="view-beers">
+      <div class="card">
+        <div class="controls">
+          <input type="text" id="beerSearch" placeholder="Search beer or brewery…">
+          <select id="beerBreweryFilter"><option value="">All breweries</option></select>
+          <select id="beerFamilyFilter"><option value="">All style families</option></select>
+          <select id="beerSort">
+            <option value="createdTime_desc">Newest first</option>
+            <option value="createdTime_asc">Oldest first</option>
+            <option value="rating_desc">Rating: high to low</option>
+            <option value="rating_asc">Rating: low to high</option>
+            <option value="abv_desc">ABV: high to low</option>
+            <option value="name_asc">Name A–Z</option>
+          </select>
+          <div class="viewtoggle">
+            <button class="active" data-view="table"><span class="material-symbols-rounded" style="font-size:15px">table_rows</span></button>
+            <button data-view="gallery"><span class="material-symbols-rounded" style="font-size:15px">grid_view</span></button>
+          </div>
+        </div>
+      </div>
+      <div class="card" id="beersTableCard">
+        <table class="dt">
+          <thead><tr><th>Beer</th><th>Brewery</th><th>Style</th><th>ABV</th><th>Rating</th><th>Status</th></tr></thead>
+          <tbody id="beersTableBody"></tbody>
+        </table>
+        <div class="pager">
+          <button id="beersPrev">Prev</button>
+          <span id="beersPageLabel"></span>
+          <button id="beersNext">Next</button>
+        </div>
+      </div>
+      <div class="card" id="beersGalleryCard" style="display:none">
+        <div class="gallery" id="beersGallery"></div>
+        <div class="pager">
+          <button id="beersGalPrev">Prev</button>
+          <span id="beersGalPageLabel"></span>
+          <button id="beersGalNext">Next</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="view" id="view-breweries">
+      <div class="card">
+        <div class="controls">
+          <input type="text" id="brewerySearch" placeholder="Search breweries…">
+          <select id="breweryMinBeers">
+            <option value="0">Any beer count</option>
+            <option value="3">3+ beers</option>
+            <option value="5">5+ beers</option>
+            <option value="10">10+ beers</option>
+          </select>
+        </div>
+      </div>
+      <div class="row">
+        <div class="card">
+          <table class="dt">
+            <thead><tr><th>Brewery</th><th>Beers</th><th>Avg rating</th><th>Location</th><th>Affiliate</th></tr></thead>
+            <tbody id="breweriesTableBody"></tbody>
+          </table>
+        </div>
+        <div class="card">
+          <h3>Top locations</h3>
+          <p class="cap">By brewery count</p>
+          <div class="taglist" id="locationList"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="view" id="view-trends">
+      <div class="row">
+        <div class="card">
+          <h3>Beers logged per month</h3>
+          <p class="cap">By Created time</p>
+          <div class="chart-wrap"><canvas id="chartMonthly"></canvas></div>
+        </div>
+        <div class="card">
+          <h3>Average rating over time</h3>
+          <p class="cap">Palate drift check — pickier or more generous lately?</p>
+          <div class="chart-wrap"><canvas id="chartMonthlyRating"></canvas></div>
+        </div>
+      </div>
+      <div class="row">
+        <div class="card">
+          <h3>Content pipeline</h3>
+          <p class="cap">Photograph &amp; Content status across all beers</p>
+          <div class="chart-wrap short"><canvas id="chartFunnel"></canvas></div>
+        </div>
+        <div class="card">
+          <h3>Affiliate programme</h3>
+          <p class="cap">Breweries by affiliate status</p>
+          <div class="chart-wrap short"><canvas id="chartAffiliate"></canvas></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+const FAMILY_COLORS = {
+  'IPA':'#d9822b','Pale Ale':'#e3a857','Sour & Fruit':'#b6558c','Ale & Amber':'#a8562f',
+  'Belgian':'#7a5c9e','Lager & Pilsner':'#c9b23a','Stout & Porter':'#4a3428',
+  'Wheat & German':'#5b7a3a','Alcohol-free':'#2383e2','Other':'#8a8272'
+};
+function familyColor(f){ return FAMILY_COLORS[f] || FAMILY_COLORS['Other']; }
+
+let DATA = { beers: [], breweries: [] };
+let charts = {};
+
+const $ = (sel) => document.querySelector(sel);
+const $$ = (sel) => Array.from(document.querySelectorAll(sel));
+
+function fmtPct(n){ return n == null ? '—' : (n*100).toFixed(1)+'%'; }
+function fmtNum(n, d=1){ return n == null ? '—' : Number(n).toFixed(d); }
+function timeAgo(iso){
+  if(!iso) return 'never';
+  const s = (Date.now() - new Date(iso).getTime())/1000;
+  if (s < 60) return 'just now';
+  if (s < 3600) return Math.floor(s/60)+'m ago';
+  if (s < 86400) return Math.floor(s/3600)+'h ago';
+  return Math.floor(s/86400)+'d ago';
+}
+
+// ---------------- tabs ----------------
+$$('.tab-btn').forEach(btn => btn.addEventListener('click', () => {
+  $$('.tab-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  $$('.view').forEach(v => v.classList.remove('active'));
+  $('#view-'+btn.dataset.tab).classList.add('active');
+}));
+
+// ---------------- data load ----------------
+async function loadData(){
+  try {
+    const res = await fetch('/api/data');
+    if (res.status === 404) { showEmpty(); return; }
+    if (!res.ok) throw new Error('load failed');
+    DATA = await res.json();
+    hideEmpty();
+    renderAll();
+  } catch (e) {
+    showEmpty();
+  }
+}
+
+function showEmpty(){
+  $('#emptyState').style.display = 'block';
+  $$('.view').forEach(v => v.style.display = 'none');
+  $('#syncDot').classList.remove('ok');
+  $('#syncLabel').textContent = 'No data yet';
+}
+function hideEmpty(){
+  $('#emptyState').style.display = 'none';
+  $$('.view').forEach(v => v.style.display = '');
+  $('#syncDot').classList.add('ok');
+  $('#syncLabel').textContent = 'Synced ' + timeAgo(DATA.lastSyncedAt);
+}
+
+function showToast(msg){
+  const t = $('#toast');
+  t.textContent = msg;
+  t.classList.add('visible');
+  clearTimeout(showToast._t);
+  showToast._t = setTimeout(() => t.classList.remove('visible'), 3500);
+}
+
+$('#syncBtn').addEventListener('click', async () => {
+  const btn = $('#syncBtn');
+  btn.disabled = true;
+  $('#syncDot').classList.add('loading');
+  $('#syncLabel').textContent = 'Syncing…';
+  try {
+    const res = await fetch('/api/sync', { method: 'POST' });
+    const body = await res.json();
+    if (!res.ok) throw new Error(body.error || 'Sync failed');
+    showToast(`Synced ${body.totals.beers} beers, ${body.totals.breweries} breweries — ${body.imagesCachedThisRun} photo(s) cached` + (body.imagesRemaining ? `, ${body.imagesRemaining} still to go (click Sync again)` : ''));
+    await loadData();
+  } catch (e) {
+    showToast('Sync failed: ' + e.message);
+  } finally {
+    btn.disabled = false;
+    $('#syncDot').classList.remove('loading');
+  }
+});
+
+// ---------------- render orchestration ----------------
+function renderAll(){
+  const breweryById = Object.fromEntries(DATA.breweries.map(b => [b.id, b]));
+  window.breweryById = breweryById;
+  computeBreweryStats();
+  renderKpis();
+  renderHistogram();
+  renderScatter();
+  renderFamilyList();
+  renderLeaderboard();
+  renderRecentGallery();
+  populateBeerFilters();
+  renderBeersTable();
+  renderBreweriesTable();
+  renderLocationList();
+  renderMonthly();
+  renderMonthlyRating();
+  renderFunnel();
+  renderAffiliate();
+}
+
+function computeBreweryStats(){
+  const stats = {};
+  for (const b of DATA.breweries) stats[b.id] = { count: 0, sum: 0, rated: 0 };
+  for (const beer of DATA.beers) {
+    for (const bid of beer.breweryIds || []) {
+      if (!stats[bid]) continue;
+      stats[bid].count++;
+      if (beer.rating != null) { stats[bid].sum += beer.rating; stats[bid].rated++; }
+    }
+  }
+  for (const b of DATA.breweries) {
+    const s = stats[b.id];
+    b._count = s.count;
+    b._avgRating = s.rated ? s.sum / s.rated : null;
+  }
+}
+
+// ---------------- overview ----------------
+function renderKpis(){
+  const beers = DATA.beers;
+  const rated = beers.filter(b => b.rating != null);
+  const abvKnown = beers.filter(b => b.abv != null);
+  const photographed = beers.filter(b => b.photograph === 'Photographed' || b.photograph === 'Drank on premises').length;
+  const avgRating = rated.length ? rated.reduce((s,b)=>s+b.rating,0)/rated.length : null;
+  const avgAbv = abvKnown.length ? abvKnown.reduce((s,b)=>s+b.abv,0)/abvKnown.length : null;
+  const familyCounts = {};
+  for (const b of beers) familyCounts[b.brewTagFamily] = (familyCounts[b.brewTagFamily]||0)+1;
+  const topFamily = Object.entries(familyCounts).sort((a,b)=>b[1]-a[1])[0] || ['—',0];
+
+  const tiles = [
+    ['Total beers', beers.length.toLocaleString(), `${photographed} photographed`],
+    ['Breweries', DATA.breweries.length.toLocaleString(), `${(beers.length/Math.max(1,DATA.breweries.length)).toFixed(1)} avg beers/brewery`],
+    ['Avg rating', fmtNum(avgRating,1), `${rated.length} rated`],
+    ['Avg ABV', fmtPct(avgAbv), 'across ' + abvKnown.length + ' beers'],
+    ['Top style', topFamily[0], `${topFamily[1]} beers`],
+  ];
+  $('#kpis').innerHTML = tiles.map(([lbl,val,sub]) => `
+    <div class="kpi"><div class="lbl">${lbl}</div><div class="val">${val}</div><div class="sub">${sub}</div></div>
+  `).join('');
+}
+
+function renderHistogram(){
+  const bins = new Array(10).fill(0);
+  for (const b of DATA.beers) {
+    if (b.rating == null) continue;
+    let idx = Math.floor(b.rating/10);
+    if (idx > 9) idx = 9;
+    if (idx < 0) idx = 0;
+    bins[idx]++;
+  }
+  const labels = bins.map((_,i) => `${i*10}-${i*10+9}`);
+  drawChart('chartHistogram', 'bar', {
+    labels,
+    datasets: [{ data: bins, backgroundColor: '#d9822b', borderRadius: 4 }]
+  }, { plugins:{legend:{display:false}}, scales:{ y:{ beginAtZero:true, grid:{color:'#ece9e2'} }, x:{ grid:{display:false} } } });
+}
+
+function pearson(pairs){
+  const n = pairs.length;
+  if (n < 2) return null;
+  const mx = pairs.reduce((s,p)=>s+p[0],0)/n;
+  const my = pairs.reduce((s,p)=>s+p[1],0)/n;
+  let num=0, dx=0, dy=0;
+  for (const [x,y] of pairs) { num += (x-mx)*(y-my); dx += (x-mx)**2; dy += (y-my)**2; }
+  const denom = Math.sqrt(dx*dy);
+  return denom ? num/denom : null;
+}
+
+function renderScatter(){
+  const points = DATA.beers.filter(b => b.abv != null && b.rating != null);
+  const byFamily = {};
+  for (const b of points) (byFamily[b.brewTagFamily] ||= []).push(b);
+  const datasets = Object.entries(byFamily).map(([family, items]) => ({
+    label: family,
+    data: items.map(b => ({ x: b.abv*100, y: b.rating })),
+    backgroundColor: familyColor(family),
+    pointRadius: 3,
+  }));
+  drawChart('chartScatter', 'scatter', { datasets }, {
+    plugins:{ legend:{ display:false } },
+    scales:{ x:{ title:{ display:true, text:'ABV %' }, grid:{color:'#ece9e2'} }, y:{ title:{ display:true, text:'Rating' }, grid:{color:'#ece9e2'} } }
+  });
+  const r = pearson(points.map(b => [b.abv, b.rating]));
+  $('#correlationLabel').textContent = r == null ? '' : `r = ${r.toFixed(2)}`;
+}
+
+function renderFamilyList(){
+  const stats = {};
+  for (const b of DATA.beers) {
+    const f = b.brewTagFamily;
+    stats[f] ||= { count:0, sum:0, rated:0 };
+    stats[f].count++;
+    if (b.rating != null) { stats[f].sum += b.rating; stats[f].rated++; }
+  }
+  const rows = Object.entries(stats).sort((a,b)=>b[1].count-a[1].count).slice(0,8);
+  const max = rows.length ? rows[0][1].count : 1;
+  $('#familyList').innerHTML = rows.map(([family, s]) => `
+    <div class="tagrow">
+      <span class="tagname"><span class="tagdot" style="background:${familyColor(family)};display:inline-block;margin-right:5px"></span>${family}</span>
+      <div class="tagbar-track"><div class="tagbar-fill" style="width:${(s.count/max*100).toFixed(0)}%;background:${familyColor(family)}"></div></div>
+      <span class="tagval">${s.count} · ${s.rated ? (s.sum/s.rated).toFixed(0) : '—'} avg</span>
+    </div>
+  `).join('');
+}
+
+function renderLeaderboard(){
+  const rows = DATA.breweries.filter(b => b._count >= 3 && b._avgRating != null)
+    .sort((a,b) => b._avgRating - a._avgRating).slice(0,8);
+  $('#leaderboardBody').innerHTML = rows.map((b,i) => `
+    <tr><td>${i+1}</td><td><strong>${esc(b.name)}</strong></td><td>${b._count}</td>
+    <td><span class="pill ${b._avgRating>=80?'good':'amber'}">${b._avgRating.toFixed(0)}</span></td></tr>
+  `).join('') || '<tr><td colspan="4" style="color:var(--muted)">Not enough data yet</td></tr>';
+}
+
+function renderRecentGallery(){
+  const recent = DATA.beers.filter(b => b.imageCached)
+    .sort((a,b) => new Date(b.createdTime) - new Date(a.createdTime)).slice(0,12);
+  $('#recentGallery').innerHTML = recent.map(beerCardHtml).join('') || '<div style="color:var(--muted);font-size:12px">No photographed beers cached yet.</div>';
+}
+
+function beerCardHtml(b){
+  const brewery = window.breweryById[(b.breweryIds||[])[0]];
+  const img = b.imageCached ? `<img src="/img/${b.id}" loading="lazy" alt="">` : '🍺';
+  return `<div class="gcard"><div class="gimg">${img}</div><div class="gmeta">
+    <div class="gname" title="${esc(b.name)}">${esc(b.name)}</div>
+    <div class="gsub">${brewery ? esc(brewery.name)+' · ' : ''}${b.rating ?? '—'}</div>
+  </div></div>`;
+}
+
+function esc(s){ return (s||'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+// ---------------- beers tab ----------------
+let beersPage = 0, beersGalPage = 0;
+const PAGE_SIZE = 50, GAL_SIZE = 30;
+
+function populateBeerFilters(){
+  const brewerySel = $('#beerBreweryFilter');
+  brewerySel.innerHTML = '<option value="">All breweries</option>' +
+    DATA.breweries.slice().sort((a,b)=>a.name.localeCompare(b.name))
+      .map(b => `<option value="${b.id}">${esc(b.name)}</option>`).join('');
+  const families = [...new Set(DATA.beers.map(b => b.brewTagFamily))].sort();
+  $('#beerFamilyFilter').innerHTML = '<option value="">All style families</option>' +
+    families.map(f => `<option value="${esc(f)}">${esc(f)}</option>`).join('');
+}
+
+function filteredSortedBeers(){
+  const q = $('#beerSearch').value.trim().toLowerCase();
+  const breweryFilter = $('#beerBreweryFilter').value;
+  const familyFilter = $('#beerFamilyFilter').value;
+  const sort = $('#beerSort').value;
+  let rows = DATA.beers.filter(b => {
+    if (breweryFilter && !(b.breweryIds||[]).includes(breweryFilter)) return false;
+    if (familyFilter && b.brewTagFamily !== familyFilter) return false;
+    if (q) {
+      const brewery = window.breweryById[(b.breweryIds||[])[0]];
+      const hay = (b.name + ' ' + (brewery ? brewery.name : '')).toLowerCase();
+      if (!hay.includes(q)) return false;
+    }
+    return true;
+  });
+  const [field, dir] = sort.split('_');
+  rows.sort((a,b) => {
+    let av = a[field], bv = b[field];
+    if (field === 'createdTime') { av = new Date(av||0).getTime(); bv = new Date(bv||0).getTime(); }
+    if (field === 'name') { av = (av||'').toLowerCase(); bv = (bv||'').toLowerCase(); }
+    if (av == null) av = -Infinity; if (bv == null) bv = -Infinity;
+    if (av < bv) return dir === 'asc' ? -1 : 1;
+    if (av > bv) return dir === 'asc' ? 1 : -1;
+    return 0;
+  });
+  return rows;
+}
+
+function renderBeersTable(){
+  const rows = filteredSortedBeers();
+  const totalPages = Math.max(1, Math.ceil(rows.length / PAGE_SIZE));
+  beersPage = Math.min(beersPage, totalPages - 1);
+  const page = rows.slice(beersPage*PAGE_SIZE, beersPage*PAGE_SIZE + PAGE_SIZE);
+  $('#beersTableBody').innerHTML = page.map(b => {
+    const brewery = window.breweryById[(b.breweryIds||[])[0]];
+    const statusPill = b.content === 'Posted' ? `<span class="pill good">Posted</span>`
+      : b.photograph === 'Photographed' ? `<span class="pill amber">Photographed</span>`
+      : `<span class="pill muted">${esc(b.photograph||'—')}</span>`;
+    return `<tr>
+      <td>${b.beerLink ? `<a href="${b.beerLink}" target="_blank" rel="noopener">${esc(b.name)}</a>` : `<strong>${esc(b.name)}</strong>`}</td>
+      <td>${brewery ? esc(brewery.name) : '—'}</td>
+      <td><span class="tagchip"><span class="tagdot" style="background:${familyColor(b.brewTagFamily)}"></span>${esc(b.brewTag||'—')}</span></td>
+      <td>${fmtPct(b.abv)}</td>
+      <td>${b.rating ?? '—'}</td>
+      <td>${statusPill}</td>
+    </tr>`;
+  }).join('') || '<tr><td colspan="6" style="color:var(--muted)">No beers match these filters.</td></tr>';
+  $('#beersPageLabel').textContent = `Page ${beersPage+1} of ${totalPages} (${rows.length} beers)`;
+  $('#beersPrev').disabled = beersPage === 0;
+  $('#beersNext').disabled = beersPage >= totalPages - 1;
+}
+
+function renderBeersGallery(){
+  const rows = filteredSortedBeers();
+  const totalPages = Math.max(1, Math.ceil(rows.length / GAL_SIZE));
+  beersGalPage = Math.min(beersGalPage, totalPages - 1);
+  const page = rows.slice(beersGalPage*GAL_SIZE, beersGalPage*GAL_SIZE + GAL_SIZE);
+  $('#beersGallery').innerHTML = page.map(beerCardHtml).join('') || '<div style="color:var(--muted);font-size:12px">No beers match these filters.</div>';
+  $('#beersGalPageLabel').textContent = `Page ${beersGalPage+1} of ${totalPages} (${rows.length} beers)`;
+  $('#beersGalPrev').disabled = beersGalPage === 0;
+  $('#beersGalNext').disabled = beersGalPage >= totalPages - 1;
+}
+
+['beerSearch','beerBreweryFilter','beerFamilyFilter','beerSort'].forEach(id => {
+  $('#'+id).addEventListener('input', () => { beersPage = 0; beersGalPage = 0; renderBeersTable(); renderBeersGallery(); });
+});
+$('#beersPrev').addEventListener('click', () => { beersPage--; renderBeersTable(); });
+$('#beersNext').addEventListener('click', () => { beersPage++; renderBeersTable(); });
+$('#beersGalPrev').addEventListener('click', () => { beersGalPage--; renderBeersGallery(); });
+$('#beersGalNext').addEventListener('click', () => { beersGalPage++; renderBeersGallery(); });
+$$('.viewtoggle button').forEach(btn => btn.addEventListener('click', () => {
+  $$('.viewtoggle button').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  const isGallery = btn.dataset.view === 'gallery';
+  $('#beersTableCard').style.display = isGallery ? 'none' : 'block';
+  $('#beersGalleryCard').style.display = isGallery ? 'block' : 'none';
+  if (isGallery) renderBeersGallery();
+}));
+
+// ---------------- breweries tab ----------------
+function renderBreweriesTable(){
+  const q = $('#brewerySearch').value.trim().toLowerCase();
+  const minBeers = Number($('#breweryMinBeers').value);
+  const rows = DATA.breweries.filter(b => (b._count||0) >= minBeers && (!q || b.name.toLowerCase().includes(q)))
+    .sort((a,b) => (b._avgRating ?? -1) - (a._avgRating ?? -1));
+  $('#breweriesTableBody').innerHTML = rows.map(b => `
+    <tr>
+      <td><strong>${b.website ? `<a href="${b.website}" target="_blank" rel="noopener">${esc(b.name)}</a>` : esc(b.name)}</strong></td>
+      <td>${b._count||0}</td>
+      <td>${b._avgRating != null ? `<span class="pill ${b._avgRating>=80?'good':'amber'}">${b._avgRating.toFixed(0)}</span>` : '—'}</td>
+      <td>${esc(b.location||'—')}</td>
+      <td>${b.affiliate === 'Affiliate programme' ? '<span class="pill good">Affiliate</span>' : b.affiliate === 'Signed up' ? '<span class="pill amber">Signed up</span>' : '<span class="pill muted">None</span>'}</td>
+    </tr>
+  `).join('') || '<tr><td colspan="5" style="color:var(--muted)">No breweries match these filters.</td></tr>';
+}
+$('#brewerySearch').addEventListener('input', renderBreweriesTable);
+$('#breweryMinBeers').addEventListener('change', renderBreweriesTable);
+
+function renderLocationList(){
+  const stats = {};
+  for (const b of DATA.breweries) {
+    const loc = (b.location||'Unknown').split(',')[0].trim() || 'Unknown';
+    stats[loc] ||= { count:0, sum:0, rated:0 };
+    stats[loc].count++;
+    if (b._avgRating != null) { stats[loc].sum += b._avgRating; stats[loc].rated++; }
+  }
+  const rows = Object.entries(stats).sort((a,b)=>b[1].count-a[1].count).slice(0,10);
+  const max = rows.length ? rows[0][1].count : 1;
+  $('#locationList').innerHTML = rows.map(([loc,s]) => `
+    <div class="tagrow">
+      <span class="tagname">${esc(loc)}</span>
+      <div class="tagbar-track"><div class="tagbar-fill" style="width:${(s.count/max*100).toFixed(0)}%"></div></div>
+      <span class="tagval">${s.count} breweries</span>
+    </div>
+  `).join('');
+}
+
+// ---------------- trends tab ----------------
+function monthKey(iso){ const d = new Date(iso); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`; }
+
+function renderMonthly(){
+  const counts = {};
+  for (const b of DATA.beers) { if (!b.createdTime) continue; const k = monthKey(b.createdTime); counts[k]=(counts[k]||0)+1; }
+  const months = Object.keys(counts).sort();
+  drawChart('chartMonthly', 'bar', {
+    labels: months,
+    datasets: [{ data: months.map(m=>counts[m]), backgroundColor: '#5b7a3a', borderRadius: 4 }]
+  }, { plugins:{legend:{display:false}}, scales:{ y:{beginAtZero:true, grid:{color:'#ece9e2'}}, x:{grid:{display:false}} } });
+}
+
+function renderMonthlyRating(){
+  const sums = {};
+  for (const b of DATA.beers) {
+    if (!b.createdTime || b.rating == null) continue;
+    const k = monthKey(b.createdTime);
+    sums[k] ||= { sum:0, n:0 };
+    sums[k].sum += b.rating; sums[k].n++;
+  }
+  const months = Object.keys(sums).sort();
+  drawChart('chartMonthlyRating', 'line', {
+    labels: months,
+    datasets: [{ data: months.map(m => sums[m].sum/sums[m].n), borderColor:'#d9822b', backgroundColor:'#fbead4', fill:true, tension:.3, pointRadius:2 }]
+  }, { plugins:{legend:{display:false}}, scales:{ y:{ grid:{color:'#ece9e2'} }, x:{grid:{display:false}} } });
+}
+
+function renderFunnel(){
+  const photoStatuses = ['Not started','Pending upload','Pending reshoot','Photographed','Drank on premises','Missed opportunity'];
+  const counts = {};
+  for (const s of photoStatuses) counts[s] = 0;
+  for (const b of DATA.beers) if (b.photograph in counts) counts[b.photograph]++;
+  drawChart('chartFunnel', 'bar', {
+    labels: photoStatuses,
+    datasets: [{ data: photoStatuses.map(s=>counts[s]), backgroundColor:'#d9822b', borderRadius:4 }]
+  }, { indexAxis:'y', plugins:{legend:{display:false}}, scales:{ x:{beginAtZero:true, grid:{color:'#ece9e2'}}, y:{grid:{display:false}} } });
+}
+
+function renderAffiliate(){
+  const cats = ['No affiliate','Signed up','Affiliate programme'];
+  const counts = cats.map(c => DATA.breweries.filter(b => b.affiliate === c).length);
+  drawChart('chartAffiliate', 'doughnut', {
+    labels: cats,
+    datasets: [{ data: counts, backgroundColor: ['#ddd8cc','#e3a857','#5b7a3a'] }]
+  }, { plugins:{ legend:{ position:'bottom', labels:{ boxWidth:10, font:{size:11} } } } });
+}
+
+// ---------------- chart helper ----------------
+function drawChart(id, type, data, options){
+  const ctx = document.getElementById(id);
+  if (charts[id]) charts[id].destroy();
+  charts[id] = new Chart(ctx, { type, data, options: { responsive:true, maintainAspectRatio:false, ...options } });
+}
+
+loadData();
+</script>
+</body>
+</html>

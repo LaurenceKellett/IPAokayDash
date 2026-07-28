@@ -1,0 +1,21 @@
+name = "ipaokay-dashboard"
+compatibility_date = "2026-07-28"
+pages_build_output_dir = "."
+
+[vars]
+NOTION_BEERS_DB_ID = "e65103a556c14be78386ee6124ac536b"
+NOTION_BREWERIES_DB_ID = "950e83c73ade492bb8aa5360951ea150"
+
+# NOTION_TOKEN is a secret, not a var — set it in Cloudflare dashboard →
+# Pages → ipaokay-dashboard → Settings → Environment variables.
+# Reuse the same integration token already used by the IPAokay Publisher
+# project (post.ipaokay.co.uk) — both Beers and Breweries are already
+# shared with that integration.
+
+[[kv_namespaces]]
+binding = "DASH_KV"
+id = "REPLACE_WITH_KV_NAMESPACE_ID"
+
+[[r2_buckets]]
+binding = "DASH_IMAGES"
+bucket_name = "ipaokay-dashboard-images"
