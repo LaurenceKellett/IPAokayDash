@@ -75,13 +75,17 @@ a{color:var(--accent-dark)}
 
 #main{flex:1;min-width:0;display:flex;flex-direction:column}
 #mainHeader{
-  position:sticky;top:0;z-index:20;display:flex;align-items:center;justify-content:space-between;gap:16px;
+  position:sticky;top:0;z-index:20;display:flex;align-items:center;justify-content:space-between;gap:12px;
   padding:16px 28px;background:var(--card);border-bottom:1px solid var(--border);
 }
 #mainHeader::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--text)}
-.breadcrumb{font-size:13px;color:var(--muted);font-weight:600}
+.header-left{display:flex;align-items:center;gap:10px;min-width:0}
+#hamburgerBtn{display:none;border:none;background:none;padding:6px;border-radius:var(--radius-sm);color:var(--text);flex:none}
+#hamburgerBtn:hover{background:var(--surface)}
+.breadcrumb{font-size:13px;color:var(--muted);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .breadcrumb strong{color:var(--text);font-weight:800}
-.sync{display:flex;align-items:center;gap:10px;font-size:11.5px;font-weight:600;color:var(--muted)}
+.sync{display:flex;align-items:center;gap:10px;font-size:11.5px;font-weight:600;color:var(--muted);flex:none}
+#sidebarBackdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:29}
 .sync-dot{width:8px;height:8px;border-radius:50%;background:var(--warning);flex:none}
 .sync-dot.ok{background:var(--good)}
 .sync-dot.loading{animation:pulse 1s ease-in-out infinite}
@@ -185,6 +189,38 @@ table.dt tr:hover td{background:var(--surface)}
 .heatmap-collabel{text-align:center;font-size:9.5px;font-weight:700;color:var(--muted);padding-bottom:2px}
 .heatmap-rowlabel{font-size:9.5px;font-weight:700;color:var(--muted);display:flex;align-items:center;justify-content:flex-end;padding-right:4px;text-align:right}
 .heatmap-cell{aspect-ratio:1;border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:var(--accent-dark);border:1px solid var(--border)}
+
+/* ---- horizontal scroll wrappers (wide tables / heatmap on narrow screens) ---- */
+.table-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.heatmap-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.heatmap-scroll .heatmap{min-width:420px}
+
+/* ---- mobile: sidebar becomes an off-canvas drawer ---- */
+@media (max-width:860px){
+  #shell{display:block}
+  #sidebar{
+    position:fixed;top:0;left:0;height:100vh;z-index:30;
+    transform:translateX(-100%);transition:transform .22s ease;box-shadow:none;
+  }
+  #sidebar.open{transform:translateX(0);box-shadow:0 12px 32px rgba(0,0,0,.2)}
+  #sidebarBackdrop.open{display:block}
+  #main{width:100%}
+  #hamburgerBtn{display:inline-flex;align-items:center;justify-content:center}
+  #mainHeader{padding:14px 16px}
+  .breadcrumb{font-size:12px}
+  #syncBtn span:not(.material-symbols-rounded){display:none}
+  #syncLabel{display:none}
+  .container{padding:16px 16px 32px}
+  .hero{padding:18px 18px;flex-direction:column;align-items:flex-start}
+  .hero .val{font-size:32px}
+  .hero-stats{gap:16px}
+  .kpis{grid-template-columns:repeat(2,1fr);gap:8px}
+  .card{padding:14px 15px}
+  .chart-wrap{height:180px}
+}
+@media (max-width:420px){
+  .kpis{grid-template-columns:1fr}
+}
 </style>
 </head>
 <body>
@@ -203,9 +239,14 @@ table.dt tr:hover td{background:var(--surface)}
     </div>
   </aside>
 
+  <div id="sidebarBackdrop"></div>
+
   <main id="main">
     <div id="mainHeader">
-      <div class="breadcrumb">IPAokay / <strong id="breadcrumbTab">Overview</strong></div>
+      <div class="header-left">
+        <button id="hamburgerBtn" aria-label="Toggle menu"><span class="material-symbols-rounded">menu</span></button>
+        <div class="breadcrumb">IPAokay / <strong id="breadcrumbTab">Overview</strong></div>
+      </div>
       <div class="sync">
         <span class="sync-dot" id="syncDot"></span>
         <span id="syncLabel">Loading…</span>
@@ -254,7 +295,7 @@ table.dt tr:hover td{background:var(--surface)}
           <div class="card">
             <h3><span class="material-symbols-rounded">military_tech</span>Brewery leaderboard</h3>
             <p class="cap">Top by average rating (min. 3 beers logged)</p>
-            <table class="dt"><thead><tr><th></th><th>Brewery</th><th>Beers</th><th>Avg</th></tr></thead><tbody id="leaderboardBody"></tbody></table>
+            <div class="table-scroll"><table class="dt"><thead><tr><th></th><th>Brewery</th><th>Beers</th><th>Avg</th></tr></thead><tbody id="leaderboardBody"></tbody></table></div>
           </div>
         </div>
         <div class="card">
@@ -277,6 +318,7 @@ table.dt tr:hover td{background:var(--surface)}
           </div>
         </div>
         <div class="card" id="beersTableCard">
+          <div class="table-scroll">
           <table class="dt">
             <thead><tr>
               <th data-field="name">Beer<span class="sort-arrow"></span></th>
@@ -288,6 +330,7 @@ table.dt tr:hover td{background:var(--surface)}
             </tr></thead>
             <tbody id="beersTableBody"></tbody>
           </table>
+          </div>
           <div class="pager">
             <button id="beersPrev">Prev</button>
             <span id="beersPageLabel"></span>
@@ -318,6 +361,7 @@ table.dt tr:hover td{background:var(--surface)}
         </div>
         <div class="card">
           <p class="cap">Click a brewery to see its beers</p>
+          <div class="table-scroll">
           <table class="dt">
             <thead><tr>
               <th data-field="name">Brewery<span class="sort-arrow"></span></th>
@@ -327,6 +371,7 @@ table.dt tr:hover td{background:var(--surface)}
             </tr></thead>
             <tbody id="breweriesTableBody"></tbody>
           </table>
+          </div>
         </div>
       </div>
 
@@ -359,7 +404,7 @@ table.dt tr:hover td{background:var(--surface)}
           <div class="card">
             <h3><span class="material-symbols-rounded">grid_view</span>The sweet spot</h3>
             <p class="cap">Where ABV and rating cluster — darker = more beers</p>
-            <div id="sweetSpotGrid"></div>
+            <div class="heatmap-scroll"><div id="sweetSpotGrid"></div></div>
           </div>
           <div class="card">
             <h3><span class="material-symbols-rounded">balance</span>Brewery consistency</h3>
@@ -443,7 +488,16 @@ $$('.side-btn').forEach(btn => btn.addEventListener('click', () => {
   $$('.view').forEach(v => v.classList.remove('active'));
   $('#view-'+btn.dataset.tab).classList.add('active');
   $('#breadcrumbTab').textContent = TAB_LABELS[btn.dataset.tab] || btn.dataset.tab;
+  closeSidebar();
 }));
+
+// ---------------- mobile sidebar drawer ----------------
+function openSidebar(){ $('#sidebar').classList.add('open'); $('#sidebarBackdrop').classList.add('open'); }
+function closeSidebar(){ $('#sidebar').classList.remove('open'); $('#sidebarBackdrop').classList.remove('open'); }
+$('#hamburgerBtn').addEventListener('click', () => {
+  $('#sidebar').classList.contains('open') ? closeSidebar() : openSidebar();
+});
+$('#sidebarBackdrop').addEventListener('click', closeSidebar);
 
 // ---------------- data load ----------------
 async function loadData(){
