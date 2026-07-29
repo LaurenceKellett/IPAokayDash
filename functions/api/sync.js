@@ -45,6 +45,7 @@ export async function onRequestPost({ env }) {
         summary: getRichText(p['Summary']),
         location: getRichText(p['📍']),
         website: getUrl(p['Website']),
+        ipaokayLink: getUrl(p['IPAOkay Link']),
         instagram: getRichText(p['Instagram']),
         hashtags: getRichText(p['Hashtags']),
         affiliate: getStatusName(p['Affiliate']),

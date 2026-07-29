@@ -103,4 +103,6 @@ Intentionally excluded: `Instagram Caption`, `Caption Prompt`, `Page Content`, `
 | Website / Instagram / Hashtags | as named |
 | Affiliate status | `Affiliate` (status) |
 
+Brewery names in the Breweries table link out to `IPAOkay Link` (the brewery's page on ipaokay.co.uk) rather than its own `Website`, when set.
+
 Beer count and average rating per brewery are computed client-side from the joined Beers array rather than trusting Notion's own rollups, so they always reflect the latest sync.

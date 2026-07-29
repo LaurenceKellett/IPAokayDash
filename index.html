@@ -145,8 +145,9 @@ a:hover{text-decoration:underline}
 
 /* ---- tables ---- */
 table.dt{width:100%;border-collapse:collapse;font-size:12.5px}
-table.dt th{text-align:left;font-size:10.5px;letter-spacing:.1px;color:var(--muted);font-weight:700;padding:0 10px 8px 0;cursor:pointer;white-space:nowrap}
-table.dt th:hover{color:var(--text)}
+table.dt th{text-align:left;font-size:10.5px;letter-spacing:.1px;color:var(--muted);font-weight:700;padding:0 10px 8px 0;white-space:nowrap}
+table.dt th[data-field]{cursor:pointer}
+table.dt th[data-field]:hover{color:var(--text)}
 table.dt td{padding:9px 10px 9px 0;border-top:1px solid var(--border);vertical-align:middle}
 table.dt tr:hover td{background:var(--surface)}
 .pill{display:inline-block;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700;white-space:nowrap}
@@ -159,19 +160,38 @@ table.dt tr:hover td{background:var(--surface)}
 .brewery-row{cursor:pointer}
 .brewery-detail-row td{background:var(--surface);border-top:none}
 .brewery-detail{display:flex;flex-direction:column;gap:2px;padding:2px 4px 8px 26px}
+.brewery-detail-meta{display:flex;flex-wrap:wrap;gap:16px;font-size:12px;color:var(--muted);font-weight:600;padding:8px 0 10px}
+.brewery-detail-meta a{color:var(--muted);font-weight:600}
+.brewery-detail-meta a:hover{color:var(--text)}
+.brewery-detail-divider{height:1px;background:var(--border);margin-bottom:8px}
 .brewery-detail-item{display:flex;align-items:center;gap:8px;font-size:12px;padding:6px 0;border-bottom:1px solid var(--border)}
 .brewery-detail-item:last-child{border-bottom:none}
+.beer-row{cursor:pointer}
+.beer-detail-row td{background:var(--surface);border-top:none}
+.beer-detail{display:flex;gap:14px;align-items:flex-start;padding:6px 4px 14px 26px}
+.beer-detail-img{width:64px;height:64px;border-radius:8px;object-fit:cover;flex:none;background:var(--hop-soft)}
+.beer-detail-img-empty{display:flex;align-items:center;justify-content:center;color:var(--muted)}
+.beer-detail-meta{display:flex;flex-direction:column;gap:6px;font-size:12px;color:var(--muted)}
+.beer-detail-row-line{display:flex;align-items:center;gap:6px}
+.beer-detail-row-line a{font-weight:700}
 
 /* ---- controls ---- */
-.controls{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
-.controls input[type=text],.controls select{border:1px solid var(--border-strong);background:var(--card);padding:8px 12px;font-size:12.5px;border-radius:999px;outline:none;font-family:var(--font-family)}
-.controls input[type=text]{min-width:180px}
+.controls{
+  display:flex;flex-wrap:wrap;gap:5px;align-items:center;
+  background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:5px;
+}
+.controls input[type=text],.controls select{
+  border:1px solid var(--border);background:var(--card);padding:7px 11px;font-size:12.5px;
+  border-radius:6px;outline:none;font-family:var(--font-family);height:34px;color:var(--text);
+}
+.controls input[type=text]{min-width:170px;flex:1 1 170px}
+.controls select{min-width:140px;flex:none}
 .controls input:focus,.controls select:focus{border-color:var(--text)}
-.viewtoggle{display:flex;gap:2px;background:var(--surface);border-radius:999px;padding:2px;margin-left:auto}
-.viewtoggle button{border:none;background:none;padding:6px 12px;border-radius:999px;color:var(--muted);font-size:11.5px;font-weight:700}
-.viewtoggle button.active{background:var(--card);color:var(--text);box-shadow:var(--shadow)}
+.viewtoggle{display:flex;gap:2px;background:var(--card);border:1px solid var(--border);border-radius:6px;padding:2px;margin-left:auto}
+.viewtoggle button{border:none;background:none;padding:6px 11px;border-radius:4px;color:var(--muted);font-size:11.5px;font-weight:700}
+.viewtoggle button.active{background:var(--surface);color:var(--text)}
 .pager{display:flex;align-items:center;gap:10px;font-size:11.5px;color:var(--muted);margin-top:10px}
-.pager button{border:1px solid var(--border-strong);background:var(--card);border-radius:999px;padding:5px 12px;font-size:11px;font-weight:700;color:var(--text)}
+.pager button{border:1px solid var(--border);background:var(--card);border-radius:6px;padding:5px 12px;font-size:11px;font-weight:700;color:var(--text)}
 .pager button:disabled{opacity:.4;cursor:not-allowed}
 
 .taglist{display:flex;flex-direction:column;gap:9px}
@@ -218,6 +238,11 @@ table.dt tr:hover td{background:var(--surface)}
   .kpis{grid-template-columns:repeat(2,1fr);gap:8px}
   .card{padding:14px 15px}
   .chart-wrap{height:180px}
+  .heatmap-scroll .heatmap{min-width:0}
+  .heatmap{grid-template-columns:30px repeat(6,1fr);gap:2px}
+  .heatmap-cell{font-size:8.5px;border-radius:4px}
+  .heatmap-collabel{font-size:7.5px}
+  .heatmap-rowlabel{font-size:7.5px;padding-right:2px}
 }
 @media (max-width:420px){
   .kpis{grid-template-columns:1fr}
@@ -312,6 +337,17 @@ table.dt tr:hover td{background:var(--surface)}
             <input type="text" id="beerSearch" placeholder="Search beer or brewery…">
             <select id="beerBreweryFilter"><option value="">All breweries</option></select>
             <select id="beerFamilyFilter"><option value="">All style families</option></select>
+            <select id="beerSort">
+              <option value="createdTime_desc">Logged: newest first</option>
+              <option value="createdTime_asc">Logged: oldest first</option>
+              <option value="rating_desc">Rating: high to low</option>
+              <option value="rating_asc">Rating: low to high</option>
+              <option value="abv_desc">ABV: high to low</option>
+              <option value="abv_asc">ABV: low to high</option>
+              <option value="name_asc">Beer: A to Z</option>
+              <option value="name_desc">Beer: Z to A</option>
+              <option value="breweryName_asc">Brewery: A to Z</option>
+            </select>
             <div class="viewtoggle">
               <button class="active" data-view="table"><span class="material-symbols-rounded" style="font-size:15px">table_rows</span></button>
               <button data-view="gallery"><span class="material-symbols-rounded" style="font-size:15px">grid_view</span></button>
@@ -322,12 +358,11 @@ table.dt tr:hover td{background:var(--surface)}
           <div class="table-scroll">
           <table class="dt">
             <thead><tr>
-              <th data-field="name">Beer<span class="sort-arrow"></span></th>
-              <th data-field="breweryName">Brewery<span class="sort-arrow"></span></th>
-              <th data-field="brewTag">Style<span class="sort-arrow"></span></th>
-              <th data-field="abv">ABV<span class="sort-arrow"></span></th>
-              <th data-field="rating">Rating<span class="sort-arrow"></span></th>
-              <th data-field="createdTime">Logged<span class="sort-arrow"></span></th>
+              <th>Beer</th>
+              <th>Brewery</th>
+              <th>Style</th>
+              <th>ABV</th>
+              <th>Rating</th>
             </tr></thead>
             <tbody id="beersTableBody"></tbody>
           </table>
@@ -368,7 +403,6 @@ table.dt tr:hover td{background:var(--surface)}
               <th data-field="name">Brewery<span class="sort-arrow"></span></th>
               <th data-field="_count">Beers<span class="sort-arrow"></span></th>
               <th data-field="_avgRating">Avg rating<span class="sort-arrow"></span></th>
-              <th data-field="location">Location<span class="sort-arrow"></span></th>
             </tr></thead>
             <tbody id="breweriesTableBody"></tbody>
           </table>
@@ -780,8 +814,7 @@ function updateSortArrows(theadEl, sortState){
 // ---------------- beers tab ----------------
 let beersPage = 0, beersGalPage = 0;
 const PAGE_SIZE = 50, GAL_SIZE = 30;
-let beersSort = { field:'createdTime', dir:'desc' };
-const BEERS_DEFAULT_DIR = { name:'asc', breweryName:'asc', brewTag:'asc', abv:'desc', rating:'desc', createdTime:'desc' };
+let expandedBeers = new Set();
 
 function populateBeerFilters(){
   const brewerySel = $('#beerBreweryFilter');
@@ -791,6 +824,16 @@ function populateBeerFilters(){
   const families = [...new Set(DATA.beers.map(b => b.brewTagFamily))].sort();
   $('#beerFamilyFilter').innerHTML = '<option value="">All style families</option>' +
     families.map(f => `<option value="${esc(f)}">${esc(f)}</option>`).join('');
+}
+
+function beerSortValue(b, field){
+  if (field === 'breweryName') {
+    const brewery = window.breweryById[(b.breweryIds||[])[0]];
+    return brewery ? brewery.name.toLowerCase() : '';
+  }
+  if (field === 'name' || field === 'brewTag') return (b[field]||'').toLowerCase();
+  if (field === 'createdTime') return new Date(b.createdTime||0).getTime();
+  return b[field];
 }
 
 function beerSortValue(b, field){
@@ -817,7 +860,7 @@ function filteredSortedBeers(){
     }
     return true;
   });
-  const { field, dir } = beersSort;
+  const [field, dir] = $('#beerSort').value.split('_');
   rows.sort((a,b) => {
     let av = beerSortValue(a, field), bv = beerSortValue(b, field);
     if (av == null) av = -Infinity; if (bv == null) bv = -Infinity;
@@ -833,23 +876,39 @@ function shortDate(iso){
   return new Date(iso).toLocaleDateString(undefined, { day:'numeric', month:'short', year:'numeric' });
 }
 
+function beerRowHtml(b){
+  const brewery = window.breweryById[(b.breweryIds||[])[0]];
+  const expanded = expandedBeers.has(b.id);
+  const chevron = expanded ? 'expand_less' : 'expand_more';
+  const mainRow = `<tr class="beer-row" data-id="${b.id}">
+    <td><span class="material-symbols-rounded" style="font-size:16px;vertical-align:-3px;color:var(--muted)">${chevron}</span> <strong>${esc(b.name)}</strong></td>
+    <td>${brewery ? esc(brewery.name) : '—'}</td>
+    <td><span class="tagchip"><span class="tagdot" style="background:${familyColor(b.brewTagFamily)}"></span>${esc(b.brewTag||'—')}</span></td>
+    <td>${fmtPct(b.abv)}</td>
+    <td>${b.rating ?? '—'}</td>
+  </tr>`;
+  if (!expanded) return mainRow;
+  const img = b.imageCached ? `<img class="beer-detail-img" src="/img/${b.id}" loading="lazy" alt="">` : `<div class="beer-detail-img beer-detail-img-empty"><span class="material-symbols-rounded">local_bar</span></div>`;
+  const statusPill = b.content === 'Posted' ? `<span class="pill good">Posted</span>`
+    : b.photograph === 'Photographed' ? `<span class="pill amber">Photographed</span>`
+    : `<span class="pill muted">${esc(b.photograph||'Not started')}</span>`;
+  const detailRow = `<tr class="beer-detail-row" data-id="${b.id}"><td colspan="5"><div class="beer-detail">
+    ${img}
+    <div class="beer-detail-meta">
+      <div class="beer-detail-row-line"><span class="material-symbols-rounded" style="font-size:14px;vertical-align:-2px">calendar_month</span>Logged ${shortDate(b.createdTime)}</div>
+      ${b.brewTagDetail ? `<div class="beer-detail-row-line">${esc(b.brewTagDetail)}</div>` : ''}
+      <div class="beer-detail-row-line">${statusPill}${b.beerLink ? ` <a href="${normalizeUrl(b.beerLink)}" target="_blank" rel="noopener" onclick="event.stopPropagation()">View post →</a>` : ''}</div>
+    </div>
+  </div></td></tr>`;
+  return mainRow + detailRow;
+}
+
 function renderBeersTable(){
-  updateSortArrows($('#beersTableCard thead'), beersSort);
   const rows = filteredSortedBeers();
   const totalPages = Math.max(1, Math.ceil(rows.length / PAGE_SIZE));
   beersPage = Math.min(beersPage, totalPages - 1);
   const page = rows.slice(beersPage*PAGE_SIZE, beersPage*PAGE_SIZE + PAGE_SIZE);
-  $('#beersTableBody').innerHTML = page.map(b => {
-    const brewery = window.breweryById[(b.breweryIds||[])[0]];
-    return `<tr>
-      <td>${b.beerLink ? `<a href="${normalizeUrl(b.beerLink)}" target="_blank" rel="noopener">${esc(b.name)}</a>` : `<strong>${esc(b.name)}</strong>`}</td>
-      <td>${brewery ? esc(brewery.name) : '—'}</td>
-      <td><span class="tagchip"><span class="tagdot" style="background:${familyColor(b.brewTagFamily)}"></span>${esc(b.brewTag||'—')}</span></td>
-      <td>${fmtPct(b.abv)}</td>
-      <td>${b.rating ?? '—'}</td>
-      <td>${shortDate(b.createdTime)}</td>
-    </tr>`;
-  }).join('') || '<tr><td colspan="6" style="color:var(--muted)">No beers match these filters.</td></tr>';
+  $('#beersTableBody').innerHTML = page.map(beerRowHtml).join('') || '<tr><td colspan="5" style="color:var(--muted)">No beers match these filters.</td></tr>';
   $('#beersPageLabel').textContent = `Page ${beersPage+1} of ${totalPages} (${rows.length} beers)`;
   $('#beersPrev').disabled = beersPage === 0;
   $('#beersNext').disabled = beersPage >= totalPages - 1;
@@ -866,11 +925,16 @@ function renderBeersGallery(){
   $('#beersGalNext').disabled = beersGalPage >= totalPages - 1;
 }
 
-bindSortableHeaders($('#beersTableCard thead'), beersSort, BEERS_DEFAULT_DIR, () => {
-  beersPage = 0; beersGalPage = 0; renderBeersTable(); renderBeersGallery();
+$('#beersTableBody').addEventListener('click', (e) => {
+  if (e.target.closest('a')) return;
+  const row = e.target.closest('.beer-row');
+  if (!row) return;
+  const id = row.dataset.id;
+  if (expandedBeers.has(id)) expandedBeers.delete(id); else expandedBeers.add(id);
+  renderBeersTable();
 });
 
-['beerSearch','beerBreweryFilter','beerFamilyFilter'].forEach(id => {
+['beerSearch','beerBreweryFilter','beerFamilyFilter','beerSort'].forEach(id => {
   $('#'+id).addEventListener('input', () => { beersPage = 0; beersGalPage = 0; renderBeersTable(); renderBeersGallery(); });
 });
 $('#beersPrev').addEventListener('click', () => { beersPage--; renderBeersTable(); });
@@ -888,21 +952,25 @@ $$('.viewtoggle button').forEach(btn => btn.addEventListener('click', () => {
 
 // ---------------- breweries tab ----------------
 let breweriesSort = { field:'_avgRating', dir:'desc' };
-const BREWERIES_DEFAULT_DIR = { name:'asc', _count:'desc', _avgRating:'desc', location:'asc' };
+const BREWERIES_DEFAULT_DIR = { name:'asc', _count:'desc', _avgRating:'desc' };
 let expandedBreweries = new Set();
 
 function breweryRowHtml(b){
   const expanded = expandedBreweries.has(b.id);
   const chevron = expanded ? 'expand_less' : 'expand_more';
   const mainRow = `<tr class="brewery-row" data-id="${b.id}">
-    <td><span class="material-symbols-rounded" style="font-size:16px;vertical-align:-3px;color:var(--muted)">${chevron}</span> <strong>${b.website ? `<a href="${normalizeUrl(b.website)}" target="_blank" rel="noopener" onclick="event.stopPropagation()">${esc(b.name)}</a>` : esc(b.name)}</strong></td>
+    <td><span class="material-symbols-rounded" style="font-size:16px;vertical-align:-3px;color:var(--muted)">${chevron}</span> <strong>${b.ipaokayLink ? `<a href="${normalizeUrl(b.ipaokayLink)}" target="_blank" rel="noopener" onclick="event.stopPropagation()">${esc(b.name)}</a>` : esc(b.name)}</strong></td>
     <td>${b._count||0}</td>
     <td>${b._avgRating != null ? `<span class="pill ${b._avgRating>=80?'good':'amber'}">${b._avgRating.toFixed(0)}</span>` : '—'}</td>
-    <td>${esc(b.location||'—')}</td>
   </tr>`;
   if (!expanded) return mainRow;
   const beers = DATA.beers.filter(beer => (beer.breweryIds||[]).includes(b.id))
     .sort((a,c) => (c.rating ?? -1) - (a.rating ?? -1));
+  const meta = `<div class="brewery-detail-meta">
+      <span><span class="material-symbols-rounded" style="font-size:14px;vertical-align:-2px">location_on</span>${esc(b.location||'Unknown location')}</span>
+      ${b.website ? `<span><a href="${normalizeUrl(b.website)}" target="_blank" rel="noopener" onclick="event.stopPropagation()"><span class="material-symbols-rounded" style="font-size:14px;vertical-align:-2px">language</span>Website</a></span>` : ''}
+    </div>
+    <div class="brewery-detail-divider"></div>`;
   const items = beers.map(beer => `
     <div class="brewery-detail-item">
       <span class="tagdot" style="background:${familyColor(beer.brewTagFamily)}"></span>
@@ -911,7 +979,7 @@ function breweryRowHtml(b){
       <span style="margin-left:auto;color:var(--muted)">${fmtPct(beer.abv)}</span>
       <span class="pill ${beer.rating>=80?'good':'amber'}" style="min-width:26px;text-align:center">${beer.rating ?? '—'}</span>
     </div>`).join('') || '<div style="color:var(--muted);font-size:12px;padding:4px 0">No beers linked to this brewery.</div>';
-  const detailRow = `<tr class="brewery-detail-row" data-id="${b.id}"><td colspan="4"><div class="brewery-detail">${items}</div></td></tr>`;
+  const detailRow = `<tr class="brewery-detail-row" data-id="${b.id}"><td colspan="3"><div class="brewery-detail">${meta}${items}</div></td></tr>`;
   return mainRow + detailRow;
 }
 
@@ -922,14 +990,14 @@ function renderBreweriesTable(){
   const rows = DATA.breweries.filter(b => (b._count||0) >= minBeers && (!q || b.name.toLowerCase().includes(q)));
   const { field, dir } = breweriesSort;
   rows.sort((a,b) => {
-    let av = field === 'name' || field === 'location' ? (a[field]||'').toLowerCase() : a[field];
-    let bv = field === 'name' || field === 'location' ? (b[field]||'').toLowerCase() : b[field];
+    let av = field === 'name' ? (a[field]||'').toLowerCase() : a[field];
+    let bv = field === 'name' ? (b[field]||'').toLowerCase() : b[field];
     if (av == null) av = -Infinity; if (bv == null) bv = -Infinity;
     if (av < bv) return dir === 'asc' ? -1 : 1;
     if (av > bv) return dir === 'asc' ? 1 : -1;
     return 0;
   });
-  $('#breweriesTableBody').innerHTML = rows.map(breweryRowHtml).join('') || '<tr><td colspan="4" style="color:var(--muted)">No breweries match these filters.</td></tr>';
+  $('#breweriesTableBody').innerHTML = rows.map(breweryRowHtml).join('') || '<tr><td colspan="3" style="color:var(--muted)">No breweries match these filters.</td></tr>';
 }
 bindSortableHeaders($('#view-breweries thead'), breweriesSort, BREWERIES_DEFAULT_DIR, renderBreweriesTable);
 $('#brewerySearch').addEventListener('input', renderBreweriesTable);
