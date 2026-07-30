@@ -85,15 +85,37 @@ export async function onRequestPost({ env }) {
       };
     });
 
+    // Diagnostics for "no photos ever show up": if literally no beer came
+    // back with a raw image URL, the `Image` files property either isn't
+    // populated or the property name in Notion doesn't match — surface the
+    // actual property names on the first page so that's easy to tell apart
+    // from a fetch/R2 failure below.
+    const imagesFoundOnPages = beers.filter((b) => b._rawImageUrl).length;
+    const diagnostics = {};
+    if (imagesFoundOnPages === 0 && beerPages.length > 0) {
+      diagnostics.noImageUrlsFound = true;
+      diagnostics.beerPropertyNames = Object.keys(beerPages[0].properties);
+      diagnostics.imagePropertyType = beerPages[0].properties['Image']?.type || null;
+    }
+
     // Cache a batch of not-yet-cached images into R2, a few at a time in
     // parallel so a full batch fits comfortably inside one request's wall
     // time without blowing the subrequest limit.
-    const toCache = beers.filter((b) => b._rawImageUrl && !b.imageCached).slice(0, IMAGE_BATCH_LIMIT);
+    if (!env.DASH_IMAGES) {
+      diagnostics.r2NotBound = true;
+    }
+    const toCache = env.DASH_IMAGES
+      ? beers.filter((b) => b._rawImageUrl && !b.imageCached).slice(0, IMAGE_BATCH_LIMIT)
+      : [];
     let imagesCachedThisRun = 0;
+    const imageErrors = [];
     async function cacheOne(beer) {
       try {
         const imgRes = await fetch(beer._rawImageUrl);
-        if (!imgRes.ok) return;
+        if (!imgRes.ok) {
+          if (imageErrors.length < 5) imageErrors.push(`${beer.name}: fetch ${imgRes.status}`);
+          return;
+        }
         const key = `beer/${beer.id}`;
         await env.DASH_IMAGES.put(key, imgRes.body, {
           httpMetadata: { contentType: imgRes.headers.get('content-type') || 'image/jpeg' },
@@ -101,13 +123,14 @@ export async function onRequestPost({ env }) {
         beer.imageKey = key;
         beer.imageCached = true;
         imagesCachedThisRun++;
-      } catch {
-        // leave uncached; will retry on next sync
+      } catch (e) {
+        if (imageErrors.length < 5) imageErrors.push(`${beer.name}: ${e.message}`);
       }
     }
     for (let i = 0; i < toCache.length; i += IMAGE_FETCH_CONCURRENCY) {
       await Promise.all(toCache.slice(i, i + IMAGE_FETCH_CONCURRENCY).map(cacheOne));
     }
+    if (imageErrors.length) diagnostics.imageErrors = imageErrors;
 
     const imagesRemaining = beers.filter((b) => b._rawImageUrl && !b.imageCached).length;
     for (const b of beers) delete b._rawImageUrl;
@@ -125,6 +148,7 @@ export async function onRequestPost({ env }) {
       totals: { beers: beers.length, breweries: breweries.length },
       imagesCachedThisRun,
       imagesRemaining,
+      ...(Object.keys(diagnostics).length ? { diagnostics } : {}),
     });
   } catch (err) {
     return errorResponse(err.status || 500, err.message || 'Sync failed');

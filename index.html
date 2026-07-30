@@ -581,7 +581,7 @@ function showToast(msg){
   t.textContent = msg;
   t.classList.add('visible');
   clearTimeout(showToast._t);
-  showToast._t = setTimeout(() => t.classList.remove('visible'), 3500);
+  showToast._t = setTimeout(() => t.classList.remove('visible'), Math.min(15000, Math.max(3500, msg.length * 60)));
 }
 
 $('#syncBtn').addEventListener('click', async () => {
@@ -608,7 +608,12 @@ $('#syncBtn').addEventListener('click', async () => {
       if (body.imagesCachedThisRun === 0) break; // no progress — avoid looping forever on persistent failures
     }
     const remaining = lastBody?.imagesRemaining || 0;
-    showToast(`Synced ${lastBody.totals.beers} beers, ${lastBody.totals.breweries} breweries — ${totalImagesCached} photo(s) cached` + (remaining ? `, ${remaining} still to go (click Sync again)` : ''));
+    let msg = `Synced ${lastBody.totals.beers} beers, ${lastBody.totals.breweries} breweries — ${totalImagesCached} photo(s) cached` + (remaining ? `, ${remaining} still to go (click Sync again)` : '');
+    const d = lastBody?.diagnostics;
+    if (d?.r2NotBound) msg += '. Photo cache (R2 bucket "DASH_IMAGES") isn\'t bound to this Pages project — check Settings → Functions.';
+    else if (d?.noImageUrlsFound) msg += `. No image URLs found on any beer — "Image" property is type "${d.imagePropertyType || 'missing'}", found properties: ${d.beerPropertyNames.join(', ')}`;
+    else if (d?.imageErrors?.length) msg += '. Errors: ' + d.imageErrors.join(' | ');
+    showToast(msg);
   } catch (e) {
     showToast('Sync failed: ' + e.message);
   } finally {
