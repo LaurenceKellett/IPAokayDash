@@ -48,6 +48,15 @@ export function getTitleText(prop) {
 export function getRichText(prop) {
   return (prop && prop.rich_text ? prop.rich_text.map((t) => t.plain_text).join('') : '') || '';
 }
+// Same as getRichText, but drops any segment that's a hyperlink (has an
+// href) — used for fields like the brewery Summary, which leads with a
+// location tag and a link to the brewery page before the actual
+// descriptive text, none of which should be pulled through.
+export function getRichTextSkipLinks(prop) {
+  return (prop && prop.rich_text
+    ? prop.rich_text.filter((t) => !t.href).map((t) => t.plain_text).join('')
+    : '') || '';
+}
 export function getNumber(prop) {
   return prop && typeof prop.number === 'number' ? prop.number : null;
 }

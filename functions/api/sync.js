@@ -16,6 +16,7 @@ import {
   notionQueryAll,
   getTitleText,
   getRichText,
+  getRichTextSkipLinks,
   getNumber,
   getSelectName,
   getStatusName,
@@ -58,7 +59,7 @@ export async function onRequestPost({ env }) {
       return {
         id: page.id,
         name: getTitleText(p['Name']),
-        summary: getRichText(p['Summary']),
+        summary: getRichTextSkipLinks(p['Summary']),
         location: getRichText(p['📍']),
         website: getUrl(p['Website']),
         ipaokayLink: getUrl(p['IPAOkay Link']),
