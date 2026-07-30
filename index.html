@@ -1511,7 +1511,7 @@ $('#beersExpandAllBtn').addEventListener('click', () => applyBeersDepth(Math.min
 $('#beersCollapseAllBtn').addEventListener('click', () => applyBeersDepth(Math.max(0, beersExpandDepth - 1)));
 
 // ---------------- breweries tab ----------------
-let breweriesSort = { field:'_avgRating', dir:'desc' };
+let breweriesSort = { field:'name', dir:'asc' };
 const BREWERIES_DEFAULT_DIR = { name:'asc', _count:'desc', _avgRating:'desc' };
 let expandedBreweries = new Set();
 // Which beers are expanded within an expanded brewery's own beer list —
