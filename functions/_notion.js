@@ -67,6 +67,26 @@ export function stripHtmlLinks(text) {
     .replace(/<a\b[^>]*>(.*?)<\/a>/gis, '$1')
     .replace(/<\/?[^>]+>/g, '');
 }
+// Many brewery Summary fields lead with a duplicate location line and a
+// website link before the actual description, e.g. "Breda, Netherlands\n
+// craftnationbeers.com\n\nCraft Nation is a brewery based in...". The
+// location is already shown separately (the 📍 field) and the link is gone
+// once stripHtmlLinks unwraps it, so that whole leading block is just
+// noise — drop it and start from the real descriptive paragraphs. Only
+// strips when the first line clearly echoes the known location (allowing
+// for a leading 📍/🔗 marker), so summaries that just start straight into
+// prose (most of them) are left untouched.
+export function stripBrewerySummaryPreamble(text, location) {
+  if (!text || !location) return text || '';
+  const breakIndex = text.indexOf('\n\n');
+  if (breakIndex === -1) return text;
+  const preamble = text.slice(0, breakIndex);
+  const rest = text.slice(breakIndex).replace(/^\n+/, '');
+  const firstLine = preamble.split('\n')[0].trim();
+  const loc = location.trim().toLowerCase();
+  const matchesLocation = loc && firstLine.length <= loc.length + 20 && firstLine.toLowerCase().endsWith(loc);
+  return matchesLocation ? rest : text;
+}
 export function getNumber(prop) {
   return prop && typeof prop.number === 'number' ? prop.number : null;
 }
@@ -94,9 +114,9 @@ export function getFileUrl(prop) {
 }
 
 // ==================== Brew Tag -> family grouping ====================
-// Best-effort clustering of the 43 Notion Brew Tag select options into
-// broad style families, purely to keep charts readable. Not a taxonomic
-// authority — tweak this map if new tags get added in Notion.
+// Best-effort clustering of Notion's Brew Tag select options into broad
+// style families, purely to keep charts and the Styles tab readable. Not a
+// taxonomic authority — tweak this map if new tags get added in Notion.
 export const BREW_TAG_FAMILIES = {
   IPA: 'IPA',
   'New England IPA (NEIPA)': 'IPA',
@@ -158,6 +178,12 @@ export const BREW_TAG_FAMILIES = {
   'Wheat Beer': 'Wheat & German',
 
   'Alcohol-free': 'Alcohol-free',
+
+  // Generic catch-alls that don't imply any particular style — grouped
+  // with everything else in "Other" explicitly rather than relying on the
+  // undocumented fallback below.
+  Beer: 'Other',
+  Experimental: 'Other',
 };
 
 export function brewTagFamily(tag) {

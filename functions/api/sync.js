@@ -18,6 +18,7 @@ import {
   getRichText,
   getRichTextSkipLinks,
   stripHtmlLinks,
+  stripBrewerySummaryPreamble,
   getNumber,
   getSelectName,
   getStatusName,
@@ -57,11 +58,13 @@ export async function onRequestPost({ env }) {
 
     const breweries = breweryPages.map((page) => {
       const p = page.properties;
+      const location = getRichText(p['📍']);
+      const summary = stripBrewerySummaryPreamble(stripHtmlLinks(getRichTextSkipLinks(p['Summary'])), location);
       return {
         id: page.id,
         name: getTitleText(p['Name']),
-        summary: stripHtmlLinks(getRichTextSkipLinks(p['Summary'])),
-        location: getRichText(p['📍']),
+        summary,
+        location,
         website: getUrl(p['Website']),
         ipaokayLink: getUrl(p['IPAOkay Link']),
         instagram: getRichText(p['Instagram']),
