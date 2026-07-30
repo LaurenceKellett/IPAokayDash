@@ -277,6 +277,14 @@ table.dt tr:hover td{background:var(--surface)}
 .slider-field-label{display:flex;justify-content:space-between;font-size:11px;font-weight:700;color:var(--muted)}
 .slider-field-label .slider-field-value{color:var(--text);font-variant-numeric:tabular-nums}
 .slider-field input[type=range]{width:100%;height:20px;accent-color:var(--rating-purple);cursor:pointer}
+/* Icon-labelled filter fields — every dropdown/slider in the Beers
+   filter grid gets a small icon + name above it so it's clear what
+   each one does at a glance, instead of a row of identical plain boxes. */
+.filter-field{display:flex;flex-direction:column;justify-content:center;gap:5px;min-width:160px}
+.filter-field-label{display:flex;align-items:center;gap:5px;font-size:11px;font-weight:700;color:var(--muted)}
+.filter-field-label .material-symbols-rounded{font-size:14px;color:var(--accent-dark)}
+.filter-field-label .slider-field-value{margin-left:auto;color:var(--text);font-variant-numeric:tabular-nums}
+.filter-field input[type=range]{width:100%;height:20px;accent-color:var(--rating-purple);cursor:pointer}
 /* Search bar is always visible, with the view toggle vertically centred
    on the same row instead of wrapping onto its own line below. */
 .filters-toprow{display:flex;gap:8px;align-items:center}
@@ -296,8 +304,8 @@ table.dt tr:hover td{background:var(--surface)}
    a floor width means they wrap tidily on mobile and stretch to fill the
    row evenly (not by content length) on desktop. */
 .controls{
-  display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;
-  background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px;
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px 16px;
+  background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px;
 }
 .pager{display:flex;align-items:center;gap:10px;font-size:11.5px;color:var(--muted);margin-top:10px}
 .pager button{border:1px solid var(--border);background:var(--card);border-radius:6px;padding:5px 12px;font-size:11px;font-weight:700;color:var(--text)}
@@ -454,27 +462,36 @@ table.dt tr:hover td{background:var(--surface)}
             <span class="material-symbols-rounded filters-chevron">expand_less</span>
           </button>
           <div class="controls" id="beersControls">
-            <select class="field" id="beerBreweryFilter"><option value="">All breweries</option></select>
-            <select class="field" id="beerFamilyFilter"><option value="">All style families</option></select>
-            <select class="field" id="beerContentFilter"><option value="">All content statuses</option></select>
-            <select class="field" id="beerSort">
-              <option value="createdTime_desc">Logged: newest first</option>
-              <option value="createdTime_asc">Logged: oldest first</option>
-              <option value="rating_desc">Rating: high to low</option>
-              <option value="rating_asc">Rating: low to high</option>
-              <option value="abv_desc">ABV: high to low</option>
-              <option value="abv_asc">ABV: low to high</option>
-              <option value="name_asc">Beer: A to Z</option>
-              <option value="name_desc">Beer: Z to A</option>
-              <option value="breweryName_asc">Brewery: A to Z</option>
-            </select>
-            <select class="field" id="beerPageSize">
-              <option value="10">10 per page</option>
-              <option value="20">20 per page</option>
-              <option value="50" selected>50 per page</option>
-              <option value="100">100 per page</option>
-              <option value="200">200 per page</option>
-            </select>
+            <div class="filter-field">
+              <div class="filter-field-label"><span class="material-symbols-rounded">factory</span>Brewery</div>
+              <select class="field" id="beerBreweryFilter"><option value="">All breweries</option></select>
+            </div>
+            <div class="filter-field">
+              <div class="filter-field-label"><span class="material-symbols-rounded">category</span>Style</div>
+              <select class="field" id="beerFamilyFilter"><option value="">All style families</option></select>
+            </div>
+            <div class="filter-field">
+              <div class="filter-field-label"><span class="material-symbols-rounded">flag</span>Content status</div>
+              <select class="field" id="beerContentFilter"><option value="">All content statuses</option></select>
+            </div>
+            <div class="filter-field">
+              <div class="filter-field-label"><span class="material-symbols-rounded">swap_vert</span>Sort by</div>
+              <select class="field" id="beerSort">
+                <option value="createdTime_desc">Logged: newest first</option>
+                <option value="createdTime_asc">Logged: oldest first</option>
+                <option value="rating_desc">Rating: high to low</option>
+                <option value="rating_asc">Rating: low to high</option>
+                <option value="abv_desc">ABV: high to low</option>
+                <option value="abv_asc">ABV: low to high</option>
+                <option value="name_asc">Beer: A to Z</option>
+                <option value="name_desc">Beer: Z to A</option>
+                <option value="breweryName_asc">Brewery: A to Z</option>
+              </select>
+            </div>
+            <div class="filter-field">
+              <div class="filter-field-label"><span class="material-symbols-rounded">view_list</span>Per page<span class="slider-field-value" id="beerPageSizeLabel">50</span></div>
+              <input type="range" id="beerPageSize" min="0" max="4" step="1" value="2">
+            </div>
           </div>
         </div>
         <div class="card" id="beersTableCard">
@@ -1061,7 +1078,14 @@ function updateSortArrows(theadEl, sortState){
 // ---------------- beers tab ----------------
 let beersPage = 0, beersGalPage = 0;
 // One user-selectable page size drives both the table and gallery views.
-function currentPageSize(){ return Number($('#beerPageSize').value) || 50; }
+// The slider itself just carries an index (0-4) into this list.
+const PAGE_SIZE_OPTIONS = [10, 20, 50, 100, 200];
+function currentPageSize(){
+  return PAGE_SIZE_OPTIONS[Number($('#beerPageSize').value)] || 50;
+}
+function updateBeerPageSizeLabel(){
+  $('#beerPageSizeLabel').textContent = currentPageSize();
+}
 let expandedBeers = new Set();
 
 function populateBeerFilters(){
@@ -1262,6 +1286,7 @@ const BEER_FILTER_IDS = ['beerSearch','beerBreweryFilter','beerFamilyFilter','be
 BEER_FILTER_IDS.forEach(id => {
   $('#'+id).addEventListener('input', () => {
     beersPage = 0; beersGalPage = 0;
+    if (id === 'beerPageSize') updateBeerPageSizeLabel();
     saveState({ beers: { ...loadState().beers, [id]: $('#'+id).value } });
     renderBeersTable(); renderBeersGallery();
   });
@@ -1293,9 +1318,19 @@ function restoreBeerControls(){
   BEER_FILTER_IDS.forEach(id => {
     if (saved[id] == null) return;
     const el = $('#'+id);
+    if (id === 'beerPageSize') {
+      // Older saved state stored the literal page size (e.g. "50")
+      // rather than a slider index — convert it so upgrading doesn't
+      // silently reset or misread anyone's existing preference.
+      const n = Number(saved[id]);
+      const index = n > PAGE_SIZE_OPTIONS.length - 1 ? PAGE_SIZE_OPTIONS.indexOf(n) : n;
+      if (index >= 0) el.value = index;
+      return;
+    }
     const isSelect = el.tagName === 'SELECT';
     if (!isSelect || el.querySelector(`option[value="${CSS.escape(saved[id])}"]`)) el.value = saved[id];
   });
+  updateBeerPageSizeLabel();
   if (saved.view === 'gallery') setBeersView('gallery');
 }
 
