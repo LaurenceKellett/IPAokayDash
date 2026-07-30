@@ -177,16 +177,22 @@ table.dt tr:hover td{background:var(--surface)}
 .beer-row{cursor:pointer}
 .beer-detail-row td{background:var(--surface);border-top:none;padding:8px 10px 14px}
 .beer-detail{position:relative;border-radius:10px;overflow:hidden;min-height:128px;background:var(--surface)}
-.beer-detail-photo{position:absolute;top:0;left:0;height:100%;width:230px;object-fit:cover;
+/* Fixed-size window that owns the fade mask; the photo inside it is
+   zoomed and shifted left so the (usually centred) beer subject lands
+   inside the fully-opaque part of the window instead of at its own
+   centre, which would sit under the fade. */
+.beer-detail-photo-wrap{
+  position:absolute;top:0;left:0;height:100%;width:230px;overflow:hidden;
   -webkit-mask-image:linear-gradient(to right,#000 0%,#000 30%,transparent 92%);
   mask-image:linear-gradient(to right,#000 0%,#000 30%,transparent 92%);
 }
-.beer-detail-photo-empty{background:var(--hop-soft);display:flex;align-items:center;padding-left:20px;color:var(--muted)}
+.beer-detail-photo{position:absolute;top:0;left:-67%;width:170%;height:100%;object-fit:cover}
+.beer-detail-photo-empty{width:100%;height:100%;background:var(--hop-soft);display:flex;align-items:center;padding-left:20px;color:var(--muted)}
 .beer-detail-photo-empty .material-symbols-rounded{font-size:26px}
 .beer-detail-meta{position:relative;z-index:1;display:flex;flex-direction:column;gap:6px;font-size:12px;color:var(--muted);padding:18px 18px 18px 190px}
 @media (max-width:860px){
   .beer-detail{min-height:96px}
-  .beer-detail-photo,.beer-detail-photo-empty{width:130px}
+  .beer-detail-photo-wrap{width:130px}
   .beer-detail-meta{padding-left:112px;padding-top:12px;padding-bottom:12px}
 }
 .beer-detail-row-line{display:flex;align-items:center;gap:6px}
@@ -1049,7 +1055,11 @@ function beerRowHtml(b){
     <td style="text-align:right">${ratingBarSpan(b)}</td>
   </tr>`;
   if (!expanded) return mainRow;
-  const img = b.imageCached ? `<img class="beer-detail-photo" src="/img/${b.id}" loading="lazy" alt="">` : `<div class="beer-detail-photo beer-detail-photo-empty"><span class="material-symbols-rounded">local_bar</span></div>`;
+  const img = `<div class="beer-detail-photo-wrap">${
+    b.imageCached
+      ? `<img class="beer-detail-photo" src="/img/${b.id}" loading="lazy" alt="">`
+      : `<div class="beer-detail-photo-empty"><span class="material-symbols-rounded">local_bar</span></div>`
+  }</div>`;
   const detailRow = `<tr class="beer-detail-row" data-id="${b.id}"><td colspan="3"><div class="beer-detail">
     ${img}
     <div class="beer-detail-meta">
