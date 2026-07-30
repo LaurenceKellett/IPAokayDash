@@ -509,6 +509,9 @@ table.dt tr:hover td{background:var(--surface)}
                 <button type="button" class="mini-btn" data-page-size="100">100</button>
               </div>
             </div>
+            <div class="filter-field" style="justify-content:flex-end">
+              <button type="button" class="mini-btn" id="beerFiltersReset"><span class="material-symbols-rounded" style="font-size:14px;vertical-align:-2px">restart_alt</span>Reset all</button>
+            </div>
           </div>
         </div>
         <div class="card" id="beersTableCard">
@@ -570,7 +573,7 @@ table.dt tr:hover td{background:var(--surface)}
               </div>
             </div>
             <div class="slider-field" style="justify-content:flex-end">
-              <button type="button" class="mini-btn" id="breweryFiltersReset"><span class="material-symbols-rounded" style="font-size:14px;vertical-align:-2px">restart_alt</span>Reset filters</button>
+              <button type="button" class="mini-btn" id="breweryFiltersReset"><span class="material-symbols-rounded" style="font-size:14px;vertical-align:-2px">restart_alt</span>Reset all</button>
             </div>
           </div>
         </div>
@@ -1351,6 +1354,18 @@ $$('#beerPageSizeButtons .mini-btn').forEach(btn => {
     renderBeersTable(); renderBeersGallery();
   });
 });
+$('#beerFiltersReset').addEventListener('click', () => {
+  $('#beerSearch').value = '';
+  $('#beerBreweryFilter').value = '';
+  $('#beerFamilyFilter').value = '';
+  $('#beerPhotographFilter').value = '';
+  $('#beerContentFilter').value = '';
+  $('#beerSort').value = 'createdTime_desc';
+  setBeerPageSize(50);
+  beersPage = 0; beersGalPage = 0;
+  saveState({ beers: { view: loadState().beers?.view } });
+  renderBeersTable(); renderBeersGallery();
+});
 $('#beersPrev').addEventListener('click', () => { beersPage--; renderBeersTable(); });
 $('#beersNext').addEventListener('click', () => { beersPage++; renderBeersTable(); });
 $('#beersGalPrev').addEventListener('click', () => { beersGalPage--; renderBeersGallery(); });
@@ -1501,10 +1516,11 @@ BREWERY_FILTER_IDS.forEach(id => {
   });
 });
 $('#breweryFiltersReset').addEventListener('click', () => {
+  $('#brewerySearch').value = '';
   $('#breweryMinBeers').value = '0';
   $('#breweryMinRating').value = '0';
   updateBreweryRangeLabels();
-  saveState({ breweries: { ...loadState().breweries, breweryMinBeers: '0', breweryMinRating: '0' } });
+  saveState({ breweries: { brewerySearch: '', breweryMinBeers: '0', breweryMinRating: '0' } });
   renderBreweriesTable();
 });
 $$('#breweriesControls .filter-presets .mini-btn').forEach(btn => {
