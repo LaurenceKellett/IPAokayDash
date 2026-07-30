@@ -285,6 +285,14 @@ table.dt tr:hover td{background:var(--surface)}
 .filter-field-label .material-symbols-rounded{font-size:14px;color:var(--accent-dark)}
 .filter-field-label .slider-field-value{margin-left:auto;color:var(--text);font-variant-numeric:tabular-nums}
 .filter-field input[type=range]{width:100%;height:20px;accent-color:var(--rating-purple);cursor:pointer}
+.mini-btn{
+  display:inline-flex;align-items:center;gap:4px;border:1px solid var(--border);background:var(--card);
+  border-radius:6px;padding:6px 10px;font-size:11.5px;font-weight:700;color:var(--text);cursor:pointer;
+  font-family:var(--font-family);height:32px;
+}
+.mini-btn:hover{background:var(--surface)}
+.mini-btn.active{background:var(--text);color:#fff;border-color:var(--text)}
+.pagesize-presets{display:flex;gap:6px;margin-top:2px}
 /* Search bar is always visible, with the view toggle vertically centred
    on the same row instead of wrapping onto its own line below. */
 .filters-toprow{display:flex;gap:8px;align-items:center}
@@ -490,7 +498,12 @@ table.dt tr:hover td{background:var(--surface)}
             </div>
             <div class="filter-field">
               <div class="filter-field-label"><span class="material-symbols-rounded">view_list</span>Per page<span class="slider-field-value" id="beerPageSizeLabel">50</span></div>
-              <input type="range" id="beerPageSize" min="0" max="4" step="1" value="2">
+              <input type="range" id="beerPageSize" min="5" max="200" step="5" value="50">
+              <div class="pagesize-presets">
+                <button type="button" class="mini-btn" data-page-size="5">5</button>
+                <button type="button" class="mini-btn" data-page-size="10">10</button>
+                <button type="button" class="mini-btn" data-page-size="15">15</button>
+              </div>
             </div>
           </div>
         </div>
@@ -539,6 +552,9 @@ table.dt tr:hover td{background:var(--surface)}
             <div class="slider-field">
               <div class="slider-field-label"><span>Min avg rating</span><span class="slider-field-value" id="breweryMinRatingLabel">Any</span></div>
               <input type="range" id="breweryMinRating" min="0" max="100" step="1" value="0">
+            </div>
+            <div class="slider-field" style="justify-content:flex-end">
+              <button type="button" class="mini-btn" id="breweryFiltersReset"><span class="material-symbols-rounded" style="font-size:14px;vertical-align:-2px">restart_alt</span>Reset filters</button>
             </div>
           </div>
         </div>
@@ -1077,14 +1093,16 @@ function updateSortArrows(theadEl, sortState){
 
 // ---------------- beers tab ----------------
 let beersPage = 0, beersGalPage = 0;
-// One user-selectable page size drives both the table and gallery views.
-// The slider itself just carries an index (0-4) into this list.
-const PAGE_SIZE_OPTIONS = [10, 20, 50, 100, 200];
-function currentPageSize(){
-  return PAGE_SIZE_OPTIONS[Number($('#beerPageSize').value)] || 50;
-}
+// One user-selectable page size (5-200) drives both the table and
+// gallery views. Small presets (5/10/15) jump straight to a value;
+// the slider covers everything else.
+function currentPageSize(){ return Number($('#beerPageSize').value) || 50; }
 function updateBeerPageSizeLabel(){
-  $('#beerPageSizeLabel').textContent = currentPageSize();
+  const size = currentPageSize();
+  $('#beerPageSizeLabel').textContent = size;
+  $$('.pagesize-presets .mini-btn').forEach(btn => {
+    btn.classList.toggle('active', Number(btn.dataset.pageSize) === size);
+  });
 }
 let expandedBeers = new Set();
 
@@ -1291,6 +1309,12 @@ BEER_FILTER_IDS.forEach(id => {
     renderBeersTable(); renderBeersGallery();
   });
 });
+$$('.pagesize-presets .mini-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    $('#beerPageSize').value = btn.dataset.pageSize;
+    $('#beerPageSize').dispatchEvent(new Event('input', { bubbles: true }));
+  });
+});
 $('#beersPrev').addEventListener('click', () => { beersPage--; renderBeersTable(); });
 $('#beersNext').addEventListener('click', () => { beersPage++; renderBeersTable(); });
 $('#beersGalPrev').addEventListener('click', () => { beersGalPage--; renderBeersGallery(); });
@@ -1319,12 +1343,14 @@ function restoreBeerControls(){
     if (saved[id] == null) return;
     const el = $('#'+id);
     if (id === 'beerPageSize') {
-      // Older saved state stored the literal page size (e.g. "50")
-      // rather than a slider index — convert it so upgrading doesn't
-      // silently reset or misread anyone's existing preference.
+      // Two earlier shapes of saved state to cope with: the original
+      // dropdown stored a literal size (e.g. "50", already compatible),
+      // and a brief slider-index version stored 0-4 into
+      // [10,20,50,100,200]. Anything below the slider's min of 5 must be
+      // one of those old indexes rather than a real page size.
       const n = Number(saved[id]);
-      const index = n > PAGE_SIZE_OPTIONS.length - 1 ? PAGE_SIZE_OPTIONS.indexOf(n) : n;
-      if (index >= 0) el.value = index;
+      const LEGACY_INDEX_VALUES = [10, 20, 50, 100, 200];
+      el.value = n < 5 ? (LEGACY_INDEX_VALUES[n] ?? 50) : n;
       return;
     }
     const isSelect = el.tagName === 'SELECT';
@@ -1442,6 +1468,13 @@ BREWERY_FILTER_IDS.forEach(id => {
     saveState({ breweries: { ...loadState().breweries, [id]: $('#'+id).value } });
     renderBreweriesTable();
   });
+});
+$('#breweryFiltersReset').addEventListener('click', () => {
+  $('#breweryMinBeers').value = '0';
+  $('#breweryMinRating').value = '0';
+  updateBreweryRangeLabels();
+  saveState({ breweries: { ...loadState().breweries, breweryMinBeers: '0', breweryMinRating: '0' } });
+  renderBreweriesTable();
 });
 let breweryControlsRestored = false;
 function restoreBreweryControls(){
