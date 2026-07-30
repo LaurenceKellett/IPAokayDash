@@ -206,6 +206,15 @@ table.dt tr:hover td{background:var(--surface)}
 .beer-detail-name{font-size:14px;font-weight:800;color:var(--text)}
 
 /* ---- controls ---- */
+.filters-card{padding:10px 14px}
+.filters-toggle{
+  display:flex;align-items:center;gap:6px;width:100%;border:none;background:none;padding:4px 2px;
+  font-family:var(--font-family);font-size:12.5px;font-weight:700;color:var(--muted);cursor:pointer;
+}
+.filters-toggle:hover{color:var(--text)}
+.filters-chevron{margin-left:auto;font-size:18px;transition:transform .15s ease}
+.filters-toggle.collapsed .filters-chevron{transform:rotate(180deg)}
+.filters-toggle:not(.collapsed)+.controls{margin-top:8px}
 .controls{
   display:flex;flex-wrap:wrap;gap:5px;align-items:center;
   background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:5px;
@@ -362,8 +371,12 @@ table.dt tr:hover td{background:var(--surface)}
       </div>
 
       <div class="view" id="view-beers">
-        <div class="card">
-          <div class="controls">
+        <div class="card filters-card">
+          <button class="filters-toggle" id="beersFiltersToggle" type="button">
+            <span class="material-symbols-rounded" style="font-size:16px">tune</span>Filters
+            <span class="material-symbols-rounded filters-chevron">expand_less</span>
+          </button>
+          <div class="controls" id="beersControls">
             <input type="text" id="beerSearch" placeholder="Search beer or brewery…">
             <select id="beerBreweryFilter"><option value="">All breweries</option></select>
             <select id="beerFamilyFilter"><option value="">All style families</option></select>
@@ -414,8 +427,12 @@ table.dt tr:hover td{background:var(--surface)}
       </div>
 
       <div class="view" id="view-breweries">
-        <div class="card">
-          <div class="controls">
+        <div class="card filters-card">
+          <button class="filters-toggle" id="breweriesFiltersToggle" type="button">
+            <span class="material-symbols-rounded" style="font-size:16px">tune</span>Filters
+            <span class="material-symbols-rounded filters-chevron">expand_less</span>
+          </button>
+          <div class="controls" id="breweriesControls">
             <input type="text" id="brewerySearch" placeholder="Search breweries…">
             <select id="breweryMinBeers">
               <option value="0">Any beer count</option>
@@ -511,6 +528,27 @@ function saveState(patch){
   Object.assign(s, patch);
   try { localStorage.setItem(STATE_KEY, JSON.stringify(s)); } catch {}
 }
+
+// Collapsible filter bars on the Beers and Breweries views — remembered
+// per view so a collapsed filter bar stays collapsed across refreshes.
+function setupFilterToggle(toggleId, controlsId, stateKey){
+  const btn = document.getElementById(toggleId);
+  const controls = document.getElementById(controlsId);
+  function apply(collapsed){
+    controls.style.display = collapsed ? 'none' : '';
+    btn.classList.toggle('collapsed', collapsed);
+  }
+  apply(!!(loadState().filtersCollapsed || {})[stateKey]);
+  btn.addEventListener('click', () => {
+    const collapsed = controls.style.display !== 'none';
+    apply(collapsed);
+    const fc = loadState().filtersCollapsed || {};
+    fc[stateKey] = collapsed;
+    saveState({ filtersCollapsed: fc });
+  });
+}
+setupFilterToggle('beersFiltersToggle', 'beersControls', 'beers');
+setupFilterToggle('breweriesFiltersToggle', 'breweriesControls', 'breweries');
 
 if (window.Chart) {
   Chart.defaults.font.family = "'Plus Jakarta Sans', sans-serif";
@@ -1007,7 +1045,6 @@ function beerRowHtml(b){
     ${img}
     <div class="beer-detail-meta">
       <div class="beer-detail-name">${esc(b.name)}</div>
-      <div class="beer-detail-row-line"><span class="material-symbols-rounded beer-detail-icon">factory</span>${brewery ? esc(brewery.name) : '—'}</div>
       ${statusDetailLine(b)}
       <div class="beer-detail-row-line"><span class="material-symbols-rounded beer-detail-icon">category</span><span class="tagchip"><span class="tagdot" style="background:${familyColor(b.brewTagFamily)}"></span>${esc(b.brewTag||'—')}</span></div>
       <div class="beer-detail-row-line"><span class="material-symbols-rounded beer-detail-icon">percent</span>${fmtPct(b.abv)} ABV</div>
