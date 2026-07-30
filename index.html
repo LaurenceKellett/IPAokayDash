@@ -175,11 +175,20 @@ table.dt tr:hover td{background:var(--surface)}
 .brewery-detail-item{display:flex;align-items:center;gap:8px;font-size:12px;padding:6px 0;border-bottom:1px solid var(--border)}
 .brewery-detail-item:last-child{border-bottom:none}
 .beer-row{cursor:pointer}
-.beer-detail-row td{background:var(--surface);border-top:none}
-.beer-detail{display:flex;gap:14px;align-items:flex-start;padding:6px 4px 14px 26px}
-.beer-detail-img{width:64px;height:64px;border-radius:8px;object-fit:cover;flex:none;background:var(--hop-soft)}
-.beer-detail-img-empty{display:flex;align-items:center;justify-content:center;color:var(--muted)}
-.beer-detail-meta{display:flex;flex-direction:column;gap:6px;font-size:12px;color:var(--muted)}
+.beer-detail-row td{background:var(--surface);border-top:none;padding:8px 10px 14px}
+.beer-detail{position:relative;border-radius:10px;overflow:hidden;min-height:128px;background:var(--surface)}
+.beer-detail-photo{position:absolute;top:0;left:0;height:100%;width:230px;object-fit:cover;
+  -webkit-mask-image:linear-gradient(to right,#000 0%,#000 30%,transparent 92%);
+  mask-image:linear-gradient(to right,#000 0%,#000 30%,transparent 92%);
+}
+.beer-detail-photo-empty{background:var(--hop-soft);display:flex;align-items:center;padding-left:20px;color:var(--muted)}
+.beer-detail-photo-empty .material-symbols-rounded{font-size:26px}
+.beer-detail-meta{position:relative;z-index:1;display:flex;flex-direction:column;gap:6px;font-size:12px;color:var(--muted);padding:18px 18px 18px 190px}
+@media (max-width:860px){
+  .beer-detail{min-height:96px}
+  .beer-detail-photo,.beer-detail-photo-empty{width:130px}
+  .beer-detail-meta{padding-left:112px;padding-top:12px;padding-bottom:12px}
+}
 .beer-detail-row-line{display:flex;align-items:center;gap:6px}
 .beer-detail-row-line a{font-weight:700}
 .beer-detail-icon{font-size:14px;width:14px;flex:none;display:flex;align-items:center;justify-content:center;color:var(--muted)}
@@ -1040,7 +1049,7 @@ function beerRowHtml(b){
     <td style="text-align:right">${ratingBarSpan(b)}</td>
   </tr>`;
   if (!expanded) return mainRow;
-  const img = b.imageCached ? `<img class="beer-detail-img" src="/img/${b.id}" loading="lazy" alt="">` : `<div class="beer-detail-img beer-detail-img-empty"><span class="material-symbols-rounded">local_bar</span></div>`;
+  const img = b.imageCached ? `<img class="beer-detail-photo" src="/img/${b.id}" loading="lazy" alt="">` : `<div class="beer-detail-photo beer-detail-photo-empty"><span class="material-symbols-rounded">local_bar</span></div>`;
   const detailRow = `<tr class="beer-detail-row" data-id="${b.id}"><td colspan="3"><div class="beer-detail">
     ${img}
     <div class="beer-detail-meta">
