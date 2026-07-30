@@ -19,6 +19,7 @@ import {
   getRichTextSkipLinks,
   stripHtmlLinks,
   stripBrewerySummaryPreamble,
+  stripLocationFromSummary,
   getNumber,
   getSelectName,
   getStatusName,
@@ -59,7 +60,10 @@ export async function onRequestPost({ env }) {
     const breweries = breweryPages.map((page) => {
       const p = page.properties;
       const location = getRichText(p['📍']);
-      const summary = stripBrewerySummaryPreamble(stripHtmlLinks(getRichTextSkipLinks(p['Summary'])), location);
+      const summary = stripLocationFromSummary(
+        stripBrewerySummaryPreamble(stripHtmlLinks(getRichTextSkipLinks(p['Summary'])), location),
+        location
+      );
       return {
         id: page.id,
         name: getTitleText(p['Name']),

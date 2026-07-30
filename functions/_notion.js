@@ -87,6 +87,58 @@ export function stripBrewerySummaryPreamble(text, location) {
   const matchesLocation = loc && firstLine.length <= loc.length + 20 && firstLine.toLowerCase().endsWith(loc);
   return matchesLocation ? rest : text;
 }
+// The location is already shown on its own line (the 📍 field, with a
+// location pin icon) above the summary, so drop it back out of the prose
+// itself where it's just restating the same fact — "Craft Nation is a
+// brewery based in Breda, Netherlands." becomes "Craft Nation is a
+// brewery.". Only matches the known connector phrasings this dataset's
+// generated summaries actually use (located/based/nestled/situated in
+// ...), each optionally followed by further "City, Country"-style
+// continuations. The clause is only ever removed when it closes cleanly —
+// at real sentence-end, or at a comma immediately followed by a lowercase
+// word resuming the main clause (e.g. "...London, is renowned" or
+// "...London, with a legacy"). A capitalized word after the comma instead
+// (e.g. "...Zealand, Yeastie Boys has...") means the "continuation" run
+// into the NEXT clause's actual subject, not another place name, so
+// nothing fires and the sentence is left alone rather than mangled.
+export function stripLocationFromSummary(text, location) {
+  if (!text || !location) return text || '';
+  const parts = location.split(',').map((s) => s.trim()).filter(Boolean);
+  const candidates = [...new Set([location.trim(), parts[0], parts[parts.length - 1]])]
+    .filter(Boolean)
+    .sort((a, b) => b.length - a.length);
+  let out = text;
+  for (const loc of candidates) {
+    const escaped = loc.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    // No 'i' flag: the connector words only ever appear lowercase in this
+    // generated prose, and dropping the flag keeps the continuation's
+    // [A-Z] check honestly case-sensitive — with /i it matches ANY word
+    // and swallows whatever text follows (e.g. "is"/"has been").
+    const connector = '\\b(?:located|based|nestled|situated)\\s+in\\s+(?:the\\s+heart\\s+of\\s+)?' + escaped + '\\b';
+    const continuation = '(?:,[ \\t]*[A-Z][a-zA-Z]+(?:\\s+[A-Z][a-zA-Z]+)*)*';
+    const closer = '(?:(?=[.!?])|,[ \\t]*(?=[a-z]))';
+    // Appositive form, bounded by a comma on both sides — e.g. "Kona
+    // Brewing Co, nestled in the heart of Hawaii, is a vibrant...".
+    const appositive = new RegExp(',[ \\t]*' + connector + continuation + closer, 'g');
+    out = out.replace(appositive, (m) => (m.trimStart()[0] === ',' ? ' ' : ''));
+    // Declarative form running to the end of the sentence (or a resumed
+    // main clause) — e.g. "...brewery located in Peckham, South London, UK."
+    const declarative = new RegExp(connector + continuation + closer, 'g');
+    out = out.replace(declarative, '');
+    const hyphenPattern = new RegExp('\\b' + escaped.replace(/\s+/g, '\\s+') + '-based\\b[ \\t]*', 'g');
+    out = out.replace(hyphenPattern, '');
+  }
+  // Only collapse space/tab runs and comma/period artifacts left behind —
+  // never touch newlines, or a multi-paragraph summary gets squashed flat.
+  return out
+    .replace(/[ \t]*,[ \t]*,/g, ',')
+    .replace(/,[ \t]*\./g, '.')
+    .replace(/[ \t]+([.,;:!?])/g, '$1')
+    .replace(/[ \t]{2,}/g, ' ')
+    .replace(/[ \t]+\n/g, '\n')
+    .replace(/\n[ \t]+/g, '\n')
+    .trim();
+}
 export function getNumber(prop) {
   return prop && typeof prop.number === 'number' ? prop.number : null;
 }
