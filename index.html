@@ -205,6 +205,10 @@ table.dt tr:hover td{background:var(--surface)}
 .brewery-detail-beer-expanded{margin:2px 0 10px 22px;border-bottom:1px solid var(--border);padding-bottom:10px}
 .brewery-detail-beer-expanded .beer-detail{background:var(--card);border:1px solid var(--border)}
 .brewery-detail-beer-expanded:last-child{border-bottom:none;padding-bottom:0}
+/* Styles tab: a third nesting level (family -> specific style -> beers),
+   so the beer list under an expanded style needs its own indent on top of
+   the .brewery-detail block's own 26px padding. */
+.style-tag-beerlist{margin:2px 0 8px 22px}
 .beer-row{cursor:pointer}
 #beersTable .beer-detail-row td{background:var(--surface);border-top:none;padding:0}
 .beer-detail{position:relative;overflow:hidden;border-radius:10px;min-height:128px;background:var(--surface)}
@@ -384,6 +388,7 @@ table.dt tr:hover td{background:var(--surface)}
       <button class="side-btn active" data-tab="overview"><span class="material-symbols-rounded">insights</span>Overview</button>
       <button class="side-btn" data-tab="beers"><span class="material-symbols-rounded">liquor</span>Beers</button>
       <button class="side-btn" data-tab="breweries"><span class="material-symbols-rounded">factory</span>Breweries</button>
+      <button class="side-btn" data-tab="styles"><span class="material-symbols-rounded">category</span>Styles</button>
       <button class="side-btn" data-tab="trends"><span class="material-symbols-rounded">trending_up</span>Trends</button>
     </nav>
     <div class="sidebar-foot">
@@ -593,6 +598,56 @@ table.dt tr:hover td{background:var(--surface)}
         </div>
       </div>
 
+      <div class="view" id="view-styles">
+        <div class="card filters-card">
+          <div class="filters-toprow">
+            <input class="field" type="text" id="styleSearch" placeholder="Search styles…">
+          </div>
+          <button class="filters-toggle" id="stylesFiltersToggle" type="button">
+            <span class="material-symbols-rounded" style="font-size:16px">tune</span>Filters
+            <span class="material-symbols-rounded filters-chevron">expand_less</span>
+          </button>
+          <div class="controls" id="stylesControls">
+            <div class="slider-field">
+              <div class="slider-field-label"><span>Min beers</span><span class="slider-field-value" id="styleMinBeersLabel">Any</span></div>
+              <input type="range" id="styleMinBeers" min="0" max="10" step="1" value="0">
+              <div class="filter-presets">
+                <button type="button" class="mini-btn" data-target="styleMinBeers" data-preset="5">5</button>
+                <button type="button" class="mini-btn" data-target="styleMinBeers" data-preset="10">10</button>
+                <button type="button" class="mini-btn" data-target="styleMinBeers" data-preset="20">20</button>
+                <button type="button" class="mini-btn" data-target="styleMinBeers" data-preset="30">30</button>
+              </div>
+            </div>
+            <div class="slider-field">
+              <div class="slider-field-label"><span>Min avg rating</span><span class="slider-field-value" id="styleMinRatingLabel">Any</span></div>
+              <input type="range" id="styleMinRating" min="0" max="100" step="1" value="0">
+              <div class="filter-presets">
+                <button type="button" class="mini-btn" data-target="styleMinRating" data-preset="60">60</button>
+                <button type="button" class="mini-btn" data-target="styleMinRating" data-preset="70">70</button>
+                <button type="button" class="mini-btn" data-target="styleMinRating" data-preset="80">80</button>
+                <button type="button" class="mini-btn" data-target="styleMinRating" data-preset="90">90</button>
+              </div>
+            </div>
+            <div class="slider-field" style="justify-content:flex-end">
+              <button type="button" class="mini-btn" id="styleFiltersReset"><span class="material-symbols-rounded" style="font-size:14px;vertical-align:-2px">restart_alt</span>Reset all</button>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <p class="cap">Click a family to see its specific styles, then a style to see its beers</p>
+          <div class="table-scroll">
+          <table class="dt">
+            <thead><tr>
+              <th>Style<span class="sort-arrow"></span></th>
+              <th>Beers<span class="sort-arrow"></span></th>
+              <th>Avg rating<span class="sort-arrow"></span></th>
+            </tr></thead>
+            <tbody id="stylesTableBody"></tbody>
+          </table>
+          </div>
+        </div>
+      </div>
+
       <div class="view" id="view-trends">
         <div class="row">
           <div class="card">
@@ -665,7 +720,7 @@ const FAMILY_COLORS = {
 };
 function familyColor(f){ return FAMILY_COLORS[f] || FAMILY_COLORS['Other']; }
 
-const TAB_LABELS = { overview:'Overview', beers:'Beers', breweries:'Breweries', trends:'Trends' };
+const TAB_LABELS = { overview:'Overview', beers:'Beers', breweries:'Breweries', styles:'Styles', trends:'Trends' };
 
 // ---------------- persisted UI state ----------------
 // Remembers which tab, filters, sort, and view (table/gallery) you had
@@ -704,6 +759,7 @@ function setupFilterToggle(toggleId, controlsId, stateKey){
 }
 setupFilterToggle('beersFiltersToggle', 'beersControls', 'beers');
 setupFilterToggle('breweriesFiltersToggle', 'breweriesControls', 'breweries');
+setupFilterToggle('stylesFiltersToggle', 'stylesControls', 'styles');
 
 if (window.Chart) {
   Chart.defaults.font.family = "'Plus Jakarta Sans', sans-serif";
@@ -875,6 +931,9 @@ function renderAll(){
   renderBeersTable();
   renderBeersGallery();
   renderBreweriesTable();
+  populateStyleFilters();
+  restoreStyleControls();
+  renderStylesTable();
   renderLocationList();
   renderMonthly();
   renderMonthlyRating();
@@ -1558,6 +1617,178 @@ $('#breweriesTableBody').addEventListener('click', (e) => {
   const id = row.dataset.id;
   if (expandedBreweries.has(id)) expandedBreweries.delete(id); else expandedBreweries.add(id);
   renderBreweriesTable();
+});
+
+// ---------------- styles tab ----------------
+// Three levels deep: broad Family (from BREW_TAG_FAMILIES) -> specific
+// Brew Tag -> beers, each level a toggle nested inside the one above,
+// reusing the same .brewery-detail-item / .brewery-detail-beer-expanded
+// look as the Breweries tab's own brewery -> beer nesting.
+let expandedStyleFamilies = new Set();
+let expandedStyleTags = new Set();
+let expandedStyleBeers = new Set();
+
+function computeStyleGroups(){
+  const families = {};
+  for (const beer of DATA.beers) {
+    const family = beer.brewTagFamily || 'Other';
+    const tag = beer.brewTag || 'Unspecified';
+    families[family] ||= { count:0, sum:0, rated:0, tags:{} };
+    families[family].count++;
+    if (beer.rating != null) { families[family].sum += beer.rating; families[family].rated++; }
+    families[family].tags[tag] ||= { count:0, sum:0, rated:0 };
+    families[family].tags[tag].count++;
+    if (beer.rating != null) { families[family].tags[tag].sum += beer.rating; families[family].tags[tag].rated++; }
+  }
+  return families;
+}
+
+function populateStyleFilters(){
+  const groups = computeStyleGroups();
+  // At least 30 so the 5/10/20/30 quick-selects are always reachable, even
+  // if no single style in the current data actually has that many beers.
+  let maxCount = 30;
+  for (const f of Object.values(groups)) for (const t of Object.values(f.tags)) maxCount = Math.max(maxCount, t.count);
+  $('#styleMinBeers').max = maxCount;
+  updateStyleRangeLabels();
+}
+function updateStyleRangeLabels(){
+  const minBeers = Number($('#styleMinBeers').value);
+  const minRating = Number($('#styleMinRating').value);
+  $('#styleMinBeersLabel').textContent = minBeers === 0 ? 'Any' : `${minBeers}+ beers`;
+  $('#styleMinRatingLabel').textContent = minRating === 0 ? 'Any' : `${minRating}+ avg`;
+  $$('#stylesControls .filter-presets .mini-btn').forEach(btn => {
+    const current = Number($('#'+btn.dataset.target).value);
+    btn.classList.toggle('active', Number(btn.dataset.preset) === current);
+  });
+}
+
+// A specific Brew Tag passes the current filters/search on its own stats
+// (beer count, avg rating) or if the search matches its parent family name
+// instead — searching "IPA" should surface every IPA-family style.
+function styleTagPasses(family, tag, t, q, minBeers, minRating){
+  const avg = t.rated ? t.sum / t.rated : null;
+  if ((t.count||0) < minBeers) return false;
+  if (minRating !== 0 && (avg == null || avg < minRating)) return false;
+  if (q && !family.toLowerCase().includes(q) && !tag.toLowerCase().includes(q)) return false;
+  return true;
+}
+
+function styleBeerItemHtml(beer){
+  const expanded = expandedStyleBeers.has(beer.id);
+  const chev = expanded ? 'expand_less' : 'expand_more';
+  const summary = `<div class="brewery-detail-item" data-style-beer-id="${beer.id}">
+    <span class="material-symbols-rounded" style="font-size:15px;flex:none;color:var(--muted)">${chev}</span>
+    <strong>${esc(beer.name)}</strong>
+    <span style="margin-left:auto;color:var(--muted)">${fmtPct(beer.abv)}</span>
+    <span class="pill ${beer.rating>=80?'good':'amber'}" style="min-width:26px;text-align:center">${beer.rating ?? '—'}</span>
+  </div>`;
+  const nested = expanded ? `<div class="brewery-detail-beer-expanded">${beerDetailBodyHtml(beer)}</div>` : '';
+  return summary + nested;
+}
+
+function styleTagItemHtml(family, tag, stats){
+  const key = family + '::' + tag;
+  const expanded = expandedStyleTags.has(key);
+  const chev = expanded ? 'expand_less' : 'expand_more';
+  const avg = stats.rated ? stats.sum / stats.rated : null;
+  const summary = `<div class="brewery-detail-item" data-style-tag-key="${esc(key)}">
+    <span class="material-symbols-rounded" style="font-size:15px;flex:none;color:var(--muted)">${chev}</span>
+    <span class="tagdot" style="background:${familyColor(family)}"></span>
+    <strong>${esc(tag)}</strong>
+    <span style="margin-left:auto;color:var(--muted)">${stats.count} beer${stats.count===1?'':'s'}</span>
+    <span class="pill ${avg>=80?'good':'amber'}" style="min-width:26px;text-align:center">${avg != null ? avg.toFixed(0) : '—'}</span>
+  </div>`;
+  if (!expanded) return summary;
+  const beers = DATA.beers.filter(b => (b.brewTagFamily||'Other') === family && (b.brewTag||'Unspecified') === tag)
+    .sort((a,c) => (c.rating ?? -1) - (a.rating ?? -1));
+  const items = beers.map(styleBeerItemHtml).join('') || '<div style="color:var(--muted);font-size:12px;padding:4px 0">No beers logged for this style.</div>';
+  return summary + `<div class="style-tag-beerlist">${items}</div>`;
+}
+
+function styleFamilyRowHtml(family, stats, q, minBeers, minRating){
+  const expanded = expandedStyleFamilies.has(family);
+  const chevron = expanded ? 'expand_less' : 'expand_more';
+  const avg = stats.rated ? stats.sum / stats.rated : null;
+  const mainRow = `<tr class="brewery-row style-family-row" data-family="${esc(family)}">
+    <td><span class="material-symbols-rounded" style="font-size:16px;vertical-align:-3px;color:var(--muted)">${chevron}</span> <span class="tagdot" style="background:${familyColor(family)}"></span> <strong>${esc(family)}</strong></td>
+    <td>${stats.count||0}</td>
+    <td>${avg != null ? `<span class="pill ${avg>=80?'good':'amber'}">${avg.toFixed(0)}</span>` : '—'}</td>
+  </tr>`;
+  if (!expanded) return mainRow;
+  const tagEntries = Object.entries(stats.tags)
+    .filter(([tag, t]) => styleTagPasses(family, tag, t, q, minBeers, minRating))
+    .sort((a,b) => b[1].count - a[1].count);
+  const items = tagEntries.map(([tag, t]) => styleTagItemHtml(family, tag, t)).join('') ||
+    '<div style="color:var(--muted);font-size:12px;padding:4px 0">No styles in this family match these filters.</div>';
+  const detailRow = `<tr class="brewery-detail-row" data-family="${esc(family)}"><td colspan="3"><div class="brewery-detail">${items}</div></td></tr>`;
+  return mainRow + detailRow;
+}
+
+function renderStylesTable(){
+  const groups = computeStyleGroups();
+  const q = $('#styleSearch').value.trim().toLowerCase();
+  const minBeers = Number($('#styleMinBeers').value);
+  const minRating = Number($('#styleMinRating').value);
+  const families = Object.entries(groups)
+    .filter(([family, stats]) => Object.entries(stats.tags).some(([tag, t]) => styleTagPasses(family, tag, t, q, minBeers, minRating)))
+    .sort((a,b) => b[1].count - a[1].count);
+  $('#stylesTableBody').innerHTML = families.map(([family, stats]) => styleFamilyRowHtml(family, stats, q, minBeers, minRating)).join('') ||
+    '<tr><td colspan="3" style="color:var(--muted)">No styles match these filters.</td></tr>';
+  syncDetailPhotoHeights();
+}
+const STYLE_FILTER_IDS = ['styleSearch','styleMinBeers','styleMinRating'];
+STYLE_FILTER_IDS.forEach(id => {
+  $('#'+id).addEventListener('input', () => {
+    updateStyleRangeLabels();
+    saveState({ styles: { ...loadState().styles, [id]: $('#'+id).value } });
+    renderStylesTable();
+  });
+});
+$('#styleFiltersReset').addEventListener('click', () => {
+  $('#styleSearch').value = '';
+  $('#styleMinBeers').value = '0';
+  $('#styleMinRating').value = '0';
+  updateStyleRangeLabels();
+  saveState({ styles: { styleSearch: '', styleMinBeers: '0', styleMinRating: '0' } });
+  renderStylesTable();
+});
+$$('#stylesControls .filter-presets .mini-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const target = $('#'+btn.dataset.target);
+    target.value = btn.dataset.preset;
+    target.dispatchEvent(new Event('input', { bubbles: true }));
+  });
+});
+let styleControlsRestored = false;
+function restoreStyleControls(){
+  if (styleControlsRestored) return;
+  styleControlsRestored = true;
+  const saved = loadState().styles || {};
+  STYLE_FILTER_IDS.forEach(id => { if (saved[id] != null) $('#'+id).value = saved[id]; });
+  updateStyleRangeLabels();
+}
+$('#stylesTableBody').addEventListener('click', (e) => {
+  if (e.target.closest('a')) return;
+  const beerItem = e.target.closest('[data-style-beer-id]');
+  if (beerItem) {
+    const id = beerItem.dataset.styleBeerId;
+    if (expandedStyleBeers.has(id)) expandedStyleBeers.delete(id); else expandedStyleBeers.add(id);
+    renderStylesTable();
+    return;
+  }
+  const tagItem = e.target.closest('[data-style-tag-key]');
+  if (tagItem) {
+    const key = tagItem.dataset.styleTagKey;
+    if (expandedStyleTags.has(key)) expandedStyleTags.delete(key); else expandedStyleTags.add(key);
+    renderStylesTable();
+    return;
+  }
+  const familyRow = e.target.closest('.style-family-row');
+  if (!familyRow) return;
+  const family = familyRow.dataset.family;
+  if (expandedStyleFamilies.has(family)) expandedStyleFamilies.delete(family); else expandedStyleFamilies.add(family);
+  renderStylesTable();
 });
 
 function renderLocationList(){
