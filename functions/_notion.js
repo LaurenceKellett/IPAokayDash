@@ -57,6 +57,16 @@ export function getRichTextSkipLinks(prop) {
     ? prop.rich_text.filter((t) => !t.href).map((t) => t.plain_text).join('')
     : '') || '';
 }
+// Notion text can contain literal HTML anchor markup typed straight into
+// the field (not a real Notion hyperlink, so getRichTextSkipLinks' href
+// check won't catch it) — e.g. "Breweries that relate to this include
+// <a href="...">Other Brewery</a>". Unwrap anchors to their link text, then
+// drop any other stray tags, so only plain prose is ever pulled through.
+export function stripHtmlLinks(text) {
+  return (text || '')
+    .replace(/<a\b[^>]*>(.*?)<\/a>/gis, '$1')
+    .replace(/<\/?[^>]+>/g, '');
+}
 export function getNumber(prop) {
   return prop && typeof prop.number === 'number' ? prop.number : null;
 }
