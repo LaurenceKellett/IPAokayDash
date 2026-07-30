@@ -206,14 +206,14 @@ table.dt tr:hover td{background:var(--surface)}
 .brewery-detail-beer-expanded:last-child{border-bottom:none;padding-bottom:0}
 .beer-row{cursor:pointer}
 #beersTable .beer-detail-row td{background:var(--surface);border-top:none;padding:0}
-.beer-detail{position:relative;overflow:hidden;min-height:128px;background:var(--surface)}
+.beer-detail{position:relative;overflow:hidden;border-radius:10px;min-height:128px;background:var(--surface)}
 /* Height is set inline by JS (syncDetailPhotoHeights) to exactly match the
    text column's rendered height — a CSS-only percentage/flex-stretch
    height here proved unreliable across browsers, so this is deterministic
-   instead of relying on layout resolution quirks. No border-radius here
-   (or on the photo) so the image fills the toggle flush to every edge —
-   rounding it previously clipped little slivers of background at the
-   corners. */
+   instead of relying on layout resolution quirks. Now that the table
+   cell around this has zero padding (it fills the cell exactly), the
+   corner rounding here doesn't clip into any surrounding gap the way it
+   did when the cell still had its own padding. */
 .beer-detail-photo-wrap{
   position:absolute;top:0;left:0;width:230px;overflow:hidden;
   -webkit-mask-image:linear-gradient(to right,#000 0%,#000 24%,transparent 93%);
@@ -1245,8 +1245,8 @@ function beerRowHtml(b){
   const expanded = expandedBeers.has(b.id);
   const chevron = expanded ? 'expand_less' : 'expand_more';
   const mainRow = `<tr class="beer-row" data-id="${b.id}">
-    <td class="beer-name-cell"><span class="material-symbols-rounded" style="font-size:16px;flex:none;color:var(--muted)">${chevron}</span><span class="beer-name-text" title="${esc(b.name)}"><strong>${esc(b.name)}</strong></span></td>
-    <td class="beer-brewery-cell" title="${brewery ? esc(brewery.name) : ''}">${breweryLinkHtml(brewery)}</td>
+    <td><div class="beer-name-cell"><span class="material-symbols-rounded" style="font-size:16px;flex:none;color:var(--muted)">${chevron}</span><span class="beer-name-text" title="${esc(b.name)}"><strong>${esc(b.name)}</strong></span></div></td>
+    <td><div class="beer-brewery-cell" title="${brewery ? esc(brewery.name) : ''}">${breweryLinkHtml(brewery)}</div></td>
     <td style="text-align:right">${ratingBarSpan(b)}</td>
   </tr>`;
   if (!expanded) return mainRow;
