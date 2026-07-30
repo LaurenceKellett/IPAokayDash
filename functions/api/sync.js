@@ -28,7 +28,8 @@ import {
   errorResponse,
 } from '../_notion.js';
 
-const IMAGE_BATCH_LIMIT = 20;
+const IMAGE_BATCH_LIMIT = 40;
+const IMAGE_FETCH_CONCURRENCY = 8;
 
 export async function onRequestPost({ env }) {
   try {
@@ -84,13 +85,15 @@ export async function onRequestPost({ env }) {
       };
     });
 
-    // Cache a batch of not-yet-cached images into R2.
+    // Cache a batch of not-yet-cached images into R2, a few at a time in
+    // parallel so a full batch fits comfortably inside one request's wall
+    // time without blowing the subrequest limit.
     const toCache = beers.filter((b) => b._rawImageUrl && !b.imageCached).slice(0, IMAGE_BATCH_LIMIT);
     let imagesCachedThisRun = 0;
-    for (const beer of toCache) {
+    async function cacheOne(beer) {
       try {
         const imgRes = await fetch(beer._rawImageUrl);
-        if (!imgRes.ok) continue;
+        if (!imgRes.ok) return;
         const key = `beer/${beer.id}`;
         await env.DASH_IMAGES.put(key, imgRes.body, {
           httpMetadata: { contentType: imgRes.headers.get('content-type') || 'image/jpeg' },
@@ -101,6 +104,9 @@ export async function onRequestPost({ env }) {
       } catch {
         // leave uncached; will retry on next sync
       }
+    }
+    for (let i = 0; i < toCache.length; i += IMAGE_FETCH_CONCURRENCY) {
+      await Promise.all(toCache.slice(i, i + IMAGE_FETCH_CONCURRENCY).map(cacheOne));
     }
 
     const imagesRemaining = beers.filter((b) => b._rawImageUrl && !b.imageCached).length;

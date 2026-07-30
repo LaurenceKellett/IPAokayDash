@@ -142,6 +142,7 @@ a:hover{text-decoration:underline}
 .gmeta{padding:8px 9px}
 .gname{font-size:11.5px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .gsub{font-size:10px;color:var(--muted)}
+.gstatus{margin-top:5px}
 
 /* ---- tables ---- */
 table.dt{width:100%;border-collapse:collapse;font-size:12.5px}
@@ -154,6 +155,7 @@ table.dt tr:hover td{background:var(--surface)}
 .pill.good{background:var(--good-soft);color:var(--good)}
 .pill.amber{background:var(--accent-soft);color:var(--accent-dark)}
 .pill.muted{background:var(--surface);color:var(--muted)}
+.pill.warning{background:var(--warning-soft);color:var(--warning)}
 .tagchip{display:inline-flex;align-items:center;gap:5px;font-size:10.5px;font-weight:700}
 .tagdot{width:7px;height:7px;border-radius:50%;flex:none}
 .sort-arrow{font-size:9px;color:var(--accent-dark)}
@@ -337,6 +339,7 @@ table.dt tr:hover td{background:var(--surface)}
             <input type="text" id="beerSearch" placeholder="Search beer or brewery…">
             <select id="beerBreweryFilter"><option value="">All breweries</option></select>
             <select id="beerFamilyFilter"><option value="">All style families</option></select>
+            <select id="beerContentFilter"><option value="">All content statuses</option></select>
             <select id="beerSort">
               <option value="createdTime_desc">Logged: newest first</option>
               <option value="createdTime_asc">Logged: oldest first</option>
@@ -363,6 +366,7 @@ table.dt tr:hover td{background:var(--surface)}
               <th>Style</th>
               <th>ABV</th>
               <th>Rating</th>
+              <th>Status</th>
             </tr></thead>
             <tbody id="beersTableBody"></tbody>
           </table>
@@ -573,13 +577,27 @@ $('#syncBtn').addEventListener('click', async () => {
   const btn = $('#syncBtn');
   btn.disabled = true;
   $('#syncDot').classList.add('loading');
-  $('#syncLabel').textContent = 'Syncing…';
   try {
-    const res = await fetch('/api/sync', { method: 'POST' });
-    const body = await res.json();
-    if (!res.ok) throw new Error(body.error || 'Sync failed');
-    showToast(`Synced ${body.totals.beers} beers, ${body.totals.breweries} breweries — ${body.imagesCachedThisRun} photo(s) cached` + (body.imagesRemaining ? `, ${body.imagesRemaining} still to go (click Sync again)` : ''));
-    await loadData();
+    let totalImagesCached = 0;
+    let lastBody = null;
+    let round = 0;
+    // Notion's photo URLs expire, so images are cached into R2 a batch at a
+    // time. Keep calling /api/sync until the backfill is fully caught up
+    // instead of making the user click repeatedly.
+    while (round < 40) {
+      round++;
+      $('#syncLabel').textContent = round === 1 ? 'Syncing…' : `Syncing photos… (${totalImagesCached} cached)`;
+      const res = await fetch('/api/sync', { method: 'POST' });
+      const body = await res.json();
+      if (!res.ok) throw new Error(body.error || 'Sync failed');
+      lastBody = body;
+      totalImagesCached += body.imagesCachedThisRun;
+      await loadData();
+      if (!body.imagesRemaining) break;
+      if (body.imagesCachedThisRun === 0) break; // no progress — avoid looping forever on persistent failures
+    }
+    const remaining = lastBody?.imagesRemaining || 0;
+    showToast(`Synced ${lastBody.totals.beers} beers, ${lastBody.totals.breweries} breweries — ${totalImagesCached} photo(s) cached` + (remaining ? `, ${remaining} still to go (click Sync again)` : ''));
   } catch (e) {
     showToast('Sync failed: ' + e.message);
   } finally {
@@ -774,12 +792,29 @@ function renderRecentGallery(){
   $('#recentGallery').innerHTML = recent.map(beerCardHtml).join('') || '<div style="color:var(--muted);font-size:12px">No photographed beers cached yet.</div>';
 }
 
+// Content status (Notion's `Content` status property, e.g. "Scheduled",
+// "Posted") falls back to the `Photograph` status while a beer hasn't
+// reached the content stage yet, and finally to "Not started".
+function contentStatusText(b){
+  return b.content || b.photograph || 'Not started';
+}
+function contentStatusPill(b){
+  const status = contentStatusText(b);
+  const s = status.toLowerCase();
+  let cls = 'muted';
+  if (s.includes('post')) cls = 'good';
+  else if (s.includes('schedul')) cls = 'warning';
+  else if (s.includes('photo') || s.includes('progress') || s.includes('review') || s.includes('draft')) cls = 'amber';
+  return `<span class="pill ${cls}">${esc(status)}</span>`;
+}
+
 function beerCardHtml(b){
   const brewery = window.breweryById[(b.breweryIds||[])[0]];
   const img = b.imageCached ? `<img src="/img/${b.id}" loading="lazy" alt="">` : '<span class="material-symbols-rounded" style="font-size:22px;color:var(--muted)">local_bar</span>';
   return `<div class="gcard" style="border-top-color:${familyColor(b.brewTagFamily)}"><div class="gimg">${img}</div><div class="gmeta">
     <div class="gname" title="${esc(b.name)}">${esc(b.name)}</div>
     <div class="gsub">${brewery ? esc(brewery.name)+' · ' : ''}${b.rating ?? '—'}</div>
+    <div class="gstatus">${contentStatusPill(b)}</div>
   </div></div>`;
 }
 
@@ -824,6 +859,9 @@ function populateBeerFilters(){
   const families = [...new Set(DATA.beers.map(b => b.brewTagFamily))].sort();
   $('#beerFamilyFilter').innerHTML = '<option value="">All style families</option>' +
     families.map(f => `<option value="${esc(f)}">${esc(f)}</option>`).join('');
+  const contentStatuses = [...new Set(DATA.beers.map(contentStatusText))].sort();
+  $('#beerContentFilter').innerHTML = '<option value="">All content statuses</option>' +
+    contentStatuses.map(s => `<option value="${esc(s)}">${esc(s)}</option>`).join('');
 }
 
 function beerSortValue(b, field){
@@ -850,9 +888,11 @@ function filteredSortedBeers(){
   const q = $('#beerSearch').value.trim().toLowerCase();
   const breweryFilter = $('#beerBreweryFilter').value;
   const familyFilter = $('#beerFamilyFilter').value;
+  const contentFilter = $('#beerContentFilter').value;
   let rows = DATA.beers.filter(b => {
     if (breweryFilter && !(b.breweryIds||[]).includes(breweryFilter)) return false;
     if (familyFilter && b.brewTagFamily !== familyFilter) return false;
+    if (contentFilter && contentStatusText(b) !== contentFilter) return false;
     if (q) {
       const brewery = window.breweryById[(b.breweryIds||[])[0]];
       const hay = (b.name + ' ' + (brewery ? brewery.name : '')).toLowerCase();
@@ -886,18 +926,16 @@ function beerRowHtml(b){
     <td><span class="tagchip"><span class="tagdot" style="background:${familyColor(b.brewTagFamily)}"></span>${esc(b.brewTag||'—')}</span></td>
     <td>${fmtPct(b.abv)}</td>
     <td>${b.rating ?? '—'}</td>
+    <td>${contentStatusPill(b)}</td>
   </tr>`;
   if (!expanded) return mainRow;
   const img = b.imageCached ? `<img class="beer-detail-img" src="/img/${b.id}" loading="lazy" alt="">` : `<div class="beer-detail-img beer-detail-img-empty"><span class="material-symbols-rounded">local_bar</span></div>`;
-  const statusPill = b.content === 'Posted' ? `<span class="pill good">Posted</span>`
-    : b.photograph === 'Photographed' ? `<span class="pill amber">Photographed</span>`
-    : `<span class="pill muted">${esc(b.photograph||'Not started')}</span>`;
-  const detailRow = `<tr class="beer-detail-row" data-id="${b.id}"><td colspan="5"><div class="beer-detail">
+  const detailRow = `<tr class="beer-detail-row" data-id="${b.id}"><td colspan="6"><div class="beer-detail">
     ${img}
     <div class="beer-detail-meta">
       <div class="beer-detail-row-line"><span class="material-symbols-rounded" style="font-size:14px;vertical-align:-2px">calendar_month</span>Logged ${shortDate(b.createdTime)}</div>
       ${b.brewTagDetail ? `<div class="beer-detail-row-line">${esc(b.brewTagDetail)}</div>` : ''}
-      <div class="beer-detail-row-line">${statusPill}${b.beerLink ? ` <a href="${normalizeUrl(b.beerLink)}" target="_blank" rel="noopener" onclick="event.stopPropagation()">View post →</a>` : ''}</div>
+      ${b.beerLink ? `<div class="beer-detail-row-line"><a href="${normalizeUrl(b.beerLink)}" target="_blank" rel="noopener" onclick="event.stopPropagation()">View post →</a></div>` : ''}
     </div>
   </div></td></tr>`;
   return mainRow + detailRow;
@@ -908,7 +946,7 @@ function renderBeersTable(){
   const totalPages = Math.max(1, Math.ceil(rows.length / PAGE_SIZE));
   beersPage = Math.min(beersPage, totalPages - 1);
   const page = rows.slice(beersPage*PAGE_SIZE, beersPage*PAGE_SIZE + PAGE_SIZE);
-  $('#beersTableBody').innerHTML = page.map(beerRowHtml).join('') || '<tr><td colspan="5" style="color:var(--muted)">No beers match these filters.</td></tr>';
+  $('#beersTableBody').innerHTML = page.map(beerRowHtml).join('') || '<tr><td colspan="6" style="color:var(--muted)">No beers match these filters.</td></tr>';
   $('#beersPageLabel').textContent = `Page ${beersPage+1} of ${totalPages} (${rows.length} beers)`;
   $('#beersPrev').disabled = beersPage === 0;
   $('#beersNext').disabled = beersPage >= totalPages - 1;
@@ -934,7 +972,7 @@ $('#beersTableBody').addEventListener('click', (e) => {
   renderBeersTable();
 });
 
-['beerSearch','beerBreweryFilter','beerFamilyFilter','beerSort'].forEach(id => {
+['beerSearch','beerBreweryFilter','beerFamilyFilter','beerContentFilter','beerSort'].forEach(id => {
   $('#'+id).addEventListener('input', () => { beersPage = 0; beersGalPage = 0; renderBeersTable(); renderBeersGallery(); });
 });
 $('#beersPrev').addEventListener('click', () => { beersPage--; renderBeersTable(); });
