@@ -30,6 +30,7 @@
   --error-soft:#fff0f0;
   --warning:#b45309;
   --warning-soft:#fffbeb;
+  --rating-purple:#7c5cbf;
   --shadow:0 1px 2px rgba(15,23,42,.04),0 10px 26px rgba(15,23,42,.06);
   --radius:10px;
   --radius-sm:6px;
@@ -191,10 +192,18 @@ table.dt tr:hover td{background:var(--surface)}
 .status-dot.warning{background:var(--warning)}
 .status-dot.amber{background:var(--accent-dark)}
 .status-dot.muted{background:var(--muted)}
-.rating-cell{display:inline-flex;align-items:center;gap:8px}
+.rating-cell{display:inline-flex;align-items:center;gap:6px}
 .rating-num{font-variant-numeric:tabular-nums;font-weight:700}
-.rating-bar{position:relative;width:70px;height:6px;flex:none;background:var(--border);border-radius:999px;overflow:hidden}
-.rating-bar-fill{position:absolute;top:0;left:0;bottom:0;background:var(--accent-dark);border-radius:999px}
+.rating-bar{position:relative;width:56px;height:6px;flex:none;background:var(--border);border-radius:999px;overflow:hidden}
+.rating-bar-fill{position:absolute;top:0;left:0;bottom:0;background:var(--rating-purple);border-radius:999px}
+
+/* ---- beers table: fixed columns so long names truncate instead of wrapping ---- */
+#beersTable{table-layout:fixed}
+#beersTable td{padding:9px 6px 9px 0}
+.beer-name-cell{display:flex;align-items:center;gap:4px;overflow:hidden}
+.beer-name-text{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.beer-brewery-cell{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.beer-detail-name{font-size:14px;font-weight:800;color:var(--text)}
 
 /* ---- controls ---- */
 .controls{
@@ -378,7 +387,8 @@ table.dt tr:hover td{background:var(--surface)}
         </div>
         <div class="card" id="beersTableCard">
           <div class="table-scroll">
-          <table class="dt">
+          <table class="dt" id="beersTable">
+            <colgroup><col><col style="width:150px"><col style="width:100px"></colgroup>
             <thead><tr>
               <th>Beer</th>
               <th>Brewery</th>
@@ -987,8 +997,8 @@ function beerRowHtml(b){
   const expanded = expandedBeers.has(b.id);
   const chevron = expanded ? 'expand_less' : 'expand_more';
   const mainRow = `<tr class="beer-row" data-id="${b.id}">
-    <td><span class="material-symbols-rounded" style="font-size:16px;vertical-align:-3px;color:var(--muted)">${chevron}</span> <strong>${esc(b.name)}</strong></td>
-    <td>${brewery ? esc(brewery.name) : '—'}</td>
+    <td class="beer-name-cell"><span class="material-symbols-rounded" style="font-size:16px;flex:none;color:var(--muted)">${chevron}</span><span class="beer-name-text" title="${esc(b.name)}"><strong>${esc(b.name)}</strong></span></td>
+    <td class="beer-brewery-cell" title="${brewery ? esc(brewery.name) : ''}">${brewery ? esc(brewery.name) : '—'}</td>
     <td style="text-align:right">${ratingBarSpan(b)}</td>
   </tr>`;
   if (!expanded) return mainRow;
@@ -996,6 +1006,8 @@ function beerRowHtml(b){
   const detailRow = `<tr class="beer-detail-row" data-id="${b.id}"><td colspan="3"><div class="beer-detail">
     ${img}
     <div class="beer-detail-meta">
+      <div class="beer-detail-name">${esc(b.name)}</div>
+      <div class="beer-detail-row-line"><span class="material-symbols-rounded beer-detail-icon">factory</span>${brewery ? esc(brewery.name) : '—'}</div>
       ${statusDetailLine(b)}
       <div class="beer-detail-row-line"><span class="material-symbols-rounded beer-detail-icon">category</span><span class="tagchip"><span class="tagdot" style="background:${familyColor(b.brewTagFamily)}"></span>${esc(b.brewTag||'—')}</span></div>
       <div class="beer-detail-row-line"><span class="material-symbols-rounded beer-detail-icon">percent</span>${fmtPct(b.abv)} ABV</div>
