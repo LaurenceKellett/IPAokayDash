@@ -377,10 +377,7 @@ table.dt tr:hover td{background:var(--surface)}
           <table class="dt">
             <thead><tr>
               <th>Beer</th>
-              <th>Brewery</th>
-              <th>Style</th>
-              <th>ABV</th>
-              <th>Rating</th>
+              <th style="text-align:right">Brewery</th>
             </tr></thead>
             <tbody id="beersTableBody"></tbody>
           </table>
@@ -944,18 +941,18 @@ function beerRowHtml(b){
   const expanded = expandedBeers.has(b.id);
   const chevron = expanded ? 'expand_less' : 'expand_more';
   const mainRow = `<tr class="beer-row" data-id="${b.id}">
-    <td><span class="material-symbols-rounded" style="font-size:16px;vertical-align:-3px;color:var(--muted)">${chevron}</span> <strong>${esc(b.name)}</strong> ${statusIconSpan(b)}</td>
-    <td>${brewery ? esc(brewery.name) : '—'}</td>
-    <td><span class="tagchip"><span class="tagdot" style="background:${familyColor(b.brewTagFamily)}"></span>${esc(b.brewTag||'—')}</span></td>
-    <td>${fmtPct(b.abv)}</td>
-    <td>${b.rating ?? '—'}</td>
+    <td><span class="material-symbols-rounded" style="font-size:16px;vertical-align:-3px;color:var(--muted)">${chevron}</span> <strong>${esc(b.name)}</strong></td>
+    <td style="text-align:right">${brewery ? esc(brewery.name) : '—'}</td>
   </tr>`;
   if (!expanded) return mainRow;
   const img = b.imageCached ? `<img class="beer-detail-img" src="/img/${b.id}" loading="lazy" alt="">` : `<div class="beer-detail-img beer-detail-img-empty"><span class="material-symbols-rounded">local_bar</span></div>`;
-  const detailRow = `<tr class="beer-detail-row" data-id="${b.id}"><td colspan="5"><div class="beer-detail">
+  const detailRow = `<tr class="beer-detail-row" data-id="${b.id}"><td colspan="2"><div class="beer-detail">
     ${img}
     <div class="beer-detail-meta">
       ${statusDetailLine(b)}
+      <div class="beer-detail-row-line"><span class="material-symbols-rounded beer-detail-icon">category</span><span class="tagchip"><span class="tagdot" style="background:${familyColor(b.brewTagFamily)}"></span>${esc(b.brewTag||'—')}</span></div>
+      <div class="beer-detail-row-line"><span class="material-symbols-rounded beer-detail-icon">percent</span>${fmtPct(b.abv)} ABV</div>
+      <div class="beer-detail-row-line"><span class="material-symbols-rounded beer-detail-icon">star</span>${b.rating ?? '—'} rating</div>
       <div class="beer-detail-row-line"><span class="material-symbols-rounded beer-detail-icon">calendar_month</span>Logged ${shortDate(b.createdTime)}</div>
       ${b.brewTagDetail ? `<div class="beer-detail-row-line"><span class="material-symbols-rounded beer-detail-icon">sell</span>${esc(b.brewTagDetail)}</div>` : ''}
       ${b.beerLink ? `<div class="beer-detail-row-line"><span class="material-symbols-rounded beer-detail-icon">open_in_new</span><a href="${normalizeUrl(b.beerLink)}" target="_blank" rel="noopener" onclick="event.stopPropagation()">View post</a></div>` : ''}
@@ -969,7 +966,7 @@ function renderBeersTable(){
   const totalPages = Math.max(1, Math.ceil(rows.length / PAGE_SIZE));
   beersPage = Math.min(beersPage, totalPages - 1);
   const page = rows.slice(beersPage*PAGE_SIZE, beersPage*PAGE_SIZE + PAGE_SIZE);
-  $('#beersTableBody').innerHTML = page.map(beerRowHtml).join('') || '<tr><td colspan="5" style="color:var(--muted)">No beers match these filters.</td></tr>';
+  $('#beersTableBody').innerHTML = page.map(beerRowHtml).join('') || '<tr><td colspan="2" style="color:var(--muted)">No beers match these filters.</td></tr>';
   $('#beersPageLabel').textContent = `Page ${beersPage+1} of ${totalPages} (${rows.length} beers)`;
   $('#beersPrev').disabled = beersPage === 0;
   $('#beersNext').disabled = beersPage >= totalPages - 1;
