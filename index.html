@@ -191,6 +191,8 @@ table.dt tr:hover td{background:var(--surface)}
 .status-dot.warning{background:var(--warning)}
 .status-dot.amber{background:var(--accent-dark)}
 .status-dot.muted{background:var(--muted)}
+.rating-bar{position:relative;width:70px;height:6px;flex:none;background:var(--border);border-radius:999px;overflow:hidden}
+.rating-bar-fill{position:absolute;top:0;left:0;bottom:0;background:var(--accent-dark);border-radius:999px}
 
 /* ---- controls ---- */
 .controls{
@@ -833,6 +835,16 @@ function statusDetailLine(b){
   const { cls } = contentStatusIcon(b);
   return `<div class="beer-detail-row-line status-${cls}"><span class="beer-detail-icon"><span class="status-dot ${cls}"></span></span>${esc(contentStatusText(b))}</div>`;
 }
+// Rating is 0-100, so the fill width is just the rating itself as a
+// percentage — a bare gray track with no fill when there's no rating yet.
+function ratingBarHtml(b){
+  const pct = b.rating == null ? 0 : Math.max(0, Math.min(100, b.rating));
+  return `<div class="beer-detail-row-line">
+    <span class="material-symbols-rounded beer-detail-icon">star</span>
+    <span>${b.rating ?? '—'} rating</span>
+    <span class="rating-bar"><span class="rating-bar-fill" style="width:${pct}%"></span></span>
+  </div>`;
+}
 
 function beerCardHtml(b){
   const brewery = window.breweryById[(b.breweryIds||[])[0]];
@@ -957,7 +969,7 @@ function beerRowHtml(b){
       ${statusDetailLine(b)}
       <div class="beer-detail-row-line"><span class="material-symbols-rounded beer-detail-icon">category</span><span class="tagchip"><span class="tagdot" style="background:${familyColor(b.brewTagFamily)}"></span>${esc(b.brewTag||'—')}</span></div>
       <div class="beer-detail-row-line"><span class="material-symbols-rounded beer-detail-icon">percent</span>${fmtPct(b.abv)} ABV</div>
-      <div class="beer-detail-row-line"><span class="material-symbols-rounded beer-detail-icon">star</span>${b.rating ?? '—'} rating</div>
+      ${ratingBarHtml(b)}
       <div class="beer-detail-row-line"><span class="material-symbols-rounded beer-detail-icon">calendar_month</span>Logged ${shortDate(b.createdTime)}</div>
       ${b.brewTagDetail ? `<div class="beer-detail-row-line"><span class="material-symbols-rounded beer-detail-icon">sell</span>${esc(b.brewTagDetail)}</div>` : ''}
       ${b.beerLink ? `<div class="beer-detail-row-line"><span class="material-symbols-rounded beer-detail-icon">open_in_new</span><a href="${normalizeUrl(b.beerLink)}" target="_blank" rel="noopener" onclick="event.stopPropagation()">View post</a></div>` : ''}
