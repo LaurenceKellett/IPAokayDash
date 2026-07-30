@@ -488,6 +488,20 @@ function familyColor(f){ return FAMILY_COLORS[f] || FAMILY_COLORS['Other']; }
 
 const TAB_LABELS = { overview:'Overview', beers:'Beers', breweries:'Breweries', trends:'Trends' };
 
+// ---------------- persisted UI state ----------------
+// Remembers which tab, filters, sort, and view (table/gallery) you had
+// selected so a refresh lands you back where you were instead of resetting
+// to Overview with empty filters.
+const STATE_KEY = 'ipaokayDashState_v1';
+function loadState(){
+  try { return JSON.parse(localStorage.getItem(STATE_KEY)) || {}; } catch { return {}; }
+}
+function saveState(patch){
+  const s = loadState();
+  Object.assign(s, patch);
+  try { localStorage.setItem(STATE_KEY, JSON.stringify(s)); } catch {}
+}
+
 if (window.Chart) {
   Chart.defaults.font.family = "'Plus Jakarta Sans', sans-serif";
   Chart.defaults.color = '#6b6255';
@@ -537,14 +551,24 @@ function avgOf(list, field){
 }
 
 // ---------------- tabs ----------------
-$$('.side-btn').forEach(btn => btn.addEventListener('click', () => {
+function activateTab(tab){
+  const btn = document.querySelector(`.side-btn[data-tab="${tab}"]`);
+  if (!btn) return;
   $$('.side-btn').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
   $$('.view').forEach(v => v.classList.remove('active'));
-  $('#view-'+btn.dataset.tab).classList.add('active');
-  $('#breadcrumbTab').textContent = TAB_LABELS[btn.dataset.tab] || btn.dataset.tab;
+  $('#view-'+tab).classList.add('active');
+  $('#breadcrumbTab').textContent = TAB_LABELS[tab] || tab;
+}
+$$('.side-btn').forEach(btn => btn.addEventListener('click', () => {
+  activateTab(btn.dataset.tab);
+  saveState({ tab: btn.dataset.tab });
   closeSidebar();
 }));
+{
+  const savedTab = loadState().tab;
+  if (savedTab && TAB_LABELS[savedTab]) activateTab(savedTab);
+}
 
 // ---------------- mobile sidebar drawer ----------------
 function openSidebar(){ $('#sidebar').classList.add('open'); $('#sidebarBackdrop').classList.add('open'); }
@@ -640,7 +664,10 @@ function renderAll(){
   renderLeaderboard();
   renderRecentGallery();
   populateBeerFilters();
+  restoreBeerControls();
+  restoreBreweryControls();
   renderBeersTable();
+  renderBeersGallery();
   renderBreweriesTable();
   renderLocationList();
   renderMonthly();
@@ -1012,21 +1039,46 @@ $('#beersTableBody').addEventListener('click', (e) => {
   renderBeersTable();
 });
 
-['beerSearch','beerBreweryFilter','beerFamilyFilter','beerContentFilter','beerSort'].forEach(id => {
-  $('#'+id).addEventListener('input', () => { beersPage = 0; beersGalPage = 0; renderBeersTable(); renderBeersGallery(); });
+const BEER_FILTER_IDS = ['beerSearch','beerBreweryFilter','beerFamilyFilter','beerContentFilter','beerSort'];
+BEER_FILTER_IDS.forEach(id => {
+  $('#'+id).addEventListener('input', () => {
+    beersPage = 0; beersGalPage = 0;
+    saveState({ beers: { ...loadState().beers, [id]: $('#'+id).value } });
+    renderBeersTable(); renderBeersGallery();
+  });
 });
 $('#beersPrev').addEventListener('click', () => { beersPage--; renderBeersTable(); });
 $('#beersNext').addEventListener('click', () => { beersPage++; renderBeersTable(); });
 $('#beersGalPrev').addEventListener('click', () => { beersGalPage--; renderBeersGallery(); });
 $('#beersGalNext').addEventListener('click', () => { beersGalPage++; renderBeersGallery(); });
-$$('.viewtoggle button').forEach(btn => btn.addEventListener('click', () => {
-  $$('.viewtoggle button').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-  const isGallery = btn.dataset.view === 'gallery';
+function setBeersView(view){
+  $$('.viewtoggle button').forEach(b => b.classList.toggle('active', b.dataset.view === view));
+  const isGallery = view === 'gallery';
   $('#beersTableCard').style.display = isGallery ? 'none' : 'block';
   $('#beersGalleryCard').style.display = isGallery ? 'block' : 'none';
   if (isGallery) renderBeersGallery();
+}
+$$('.viewtoggle button').forEach(btn => btn.addEventListener('click', () => {
+  setBeersView(btn.dataset.view);
+  saveState({ beers: { ...loadState().beers, view: btn.dataset.view } });
 }));
+
+// Restore beer filters/sort/view once, after populateBeerFilters() has
+// built the brewery/family/content <option> lists so saved values match
+// real options instead of silently falling back to blank.
+let beerControlsRestored = false;
+function restoreBeerControls(){
+  if (beerControlsRestored) return;
+  beerControlsRestored = true;
+  const saved = loadState().beers || {};
+  BEER_FILTER_IDS.forEach(id => {
+    if (saved[id] == null) return;
+    const el = $('#'+id);
+    const isSelect = el.tagName === 'SELECT';
+    if (!isSelect || el.querySelector(`option[value="${CSS.escape(saved[id])}"]`)) el.value = saved[id];
+  });
+  if (saved.view === 'gallery') setBeersView('gallery');
+}
 
 // ---------------- breweries tab ----------------
 let breweriesSort = { field:'_avgRating', dir:'desc' };
@@ -1078,8 +1130,20 @@ function renderBreweriesTable(){
   $('#breweriesTableBody').innerHTML = rows.map(breweryRowHtml).join('') || '<tr><td colspan="3" style="color:var(--muted)">No breweries match these filters.</td></tr>';
 }
 bindSortableHeaders($('#view-breweries thead'), breweriesSort, BREWERIES_DEFAULT_DIR, renderBreweriesTable);
-$('#brewerySearch').addEventListener('input', renderBreweriesTable);
-$('#breweryMinBeers').addEventListener('change', renderBreweriesTable);
+const BREWERY_FILTER_IDS = ['brewerySearch','breweryMinBeers'];
+BREWERY_FILTER_IDS.forEach(id => {
+  $('#'+id).addEventListener(id === 'breweryMinBeers' ? 'change' : 'input', () => {
+    saveState({ breweries: { ...loadState().breweries, [id]: $('#'+id).value } });
+    renderBreweriesTable();
+  });
+});
+let breweryControlsRestored = false;
+function restoreBreweryControls(){
+  if (breweryControlsRestored) return;
+  breweryControlsRestored = true;
+  const saved = loadState().breweries || {};
+  BREWERY_FILTER_IDS.forEach(id => { if (saved[id] != null) $('#'+id).value = saved[id]; });
+}
 $('#breweriesTableBody').addEventListener('click', (e) => {
   if (e.target.closest('a')) return;
   const row = e.target.closest('.brewery-row');
