@@ -176,26 +176,24 @@ table.dt tr:hover td{background:var(--surface)}
 .brewery-detail-item:last-child{border-bottom:none}
 .beer-row{cursor:pointer}
 .beer-detail-row td{background:var(--surface);border-top:none;padding:8px 10px 14px}
-/* Flex layout (not absolute positioning) so the photo column stretches to
-   match whatever height the text column ends up needing — a percentage
-   height on an absolutely-positioned child can't resolve against an
-   auto-height parent, which is what left gaps below short photos. The
-   text column then overlaps the photo's tail via a negative margin, which
-   is where the fade mask does its work. */
-.beer-detail{display:flex;align-items:stretch;border-radius:10px;overflow:hidden;min-height:128px;background:var(--surface)}
+.beer-detail{position:relative;border-radius:10px;overflow:hidden;min-height:128px;background:var(--surface)}
+/* Height is set inline by JS (syncDetailPhotoHeights) to exactly match the
+   text column's rendered height — a CSS-only percentage/flex-stretch
+   height here proved unreliable across browsers, so this is deterministic
+   instead of relying on layout resolution quirks. */
 .beer-detail-photo-wrap{
-  position:relative;flex:none;width:230px;overflow:hidden;
+  position:absolute;top:0;left:0;width:230px;overflow:hidden;
   -webkit-mask-image:linear-gradient(to right,#000 0%,#000 30%,transparent 92%);
   mask-image:linear-gradient(to right,#000 0%,#000 30%,transparent 92%);
 }
 .beer-detail-photo{position:absolute;top:0;left:-67%;width:170%;height:100%;object-fit:cover}
 .beer-detail-photo-empty{position:absolute;inset:0;background:var(--hop-soft);display:flex;align-items:center;padding-left:20px;color:var(--muted)}
 .beer-detail-photo-empty .material-symbols-rounded{font-size:26px}
-.beer-detail-meta{position:relative;z-index:1;flex:1 1 auto;min-width:0;display:flex;flex-direction:column;gap:6px;font-size:12px;color:var(--muted);margin-left:-40px;padding:18px 18px 18px 8px}
+.beer-detail-meta{position:relative;z-index:1;display:flex;flex-direction:column;gap:6px;font-size:12px;color:var(--muted);padding:18px 18px 18px 190px}
 @media (max-width:860px){
   .beer-detail{min-height:96px}
   .beer-detail-photo-wrap{width:130px}
-  .beer-detail-meta{margin-left:-18px;padding:12px 14px 12px 6px}
+  .beer-detail-meta{padding-left:112px;padding-top:12px;padding-bottom:12px}
 }
 .beer-detail-row-line{display:flex;align-items:center;gap:6px}
 .beer-detail-row-line a{font-weight:700}
@@ -1098,7 +1096,23 @@ function renderBeersTable(){
   $('#beersPageLabel').textContent = `Page ${beersPage+1} of ${totalPages} (${rows.length} beers)`;
   $('#beersPrev').disabled = beersPage === 0;
   $('#beersNext').disabled = beersPage >= totalPages - 1;
+  syncDetailPhotoHeights();
 }
+
+// Sets each expanded row's photo/placeholder height to exactly match the
+// text column next to it, since a CSS-only percentage/flex-stretch height
+// on the photo wasn't resolving reliably in every browser.
+function syncDetailPhotoHeights(){
+  document.querySelectorAll('.beer-detail-row').forEach(row => {
+    const container = row.querySelector('.beer-detail');
+    const wrap = row.querySelector('.beer-detail-photo-wrap');
+    if (container && wrap) wrap.style.height = container.offsetHeight + 'px';
+  });
+}
+window.addEventListener('resize', () => {
+  clearTimeout(syncDetailPhotoHeights._t);
+  syncDetailPhotoHeights._t = setTimeout(syncDetailPhotoHeights, 150);
+});
 
 function renderBeersGallery(){
   const rows = filteredSortedBeers();
