@@ -181,6 +181,16 @@ table.dt tr:hover td{background:var(--surface)}
 .beer-detail-meta{display:flex;flex-direction:column;gap:6px;font-size:12px;color:var(--muted)}
 .beer-detail-row-line{display:flex;align-items:center;gap:6px}
 .beer-detail-row-line a{font-weight:700}
+.beer-detail-icon{font-size:14px;width:14px;flex:none;display:flex;align-items:center;justify-content:center;color:var(--muted)}
+.beer-detail-row-line.status-good{color:var(--good);font-weight:700}
+.beer-detail-row-line.status-warning{color:var(--warning);font-weight:700}
+.beer-detail-row-line.status-amber{color:var(--accent-dark);font-weight:700}
+.beer-detail-row-line.status-muted{color:var(--muted);font-weight:700}
+.status-dot{width:8px;height:8px;border-radius:50%;flex:none}
+.status-dot.good{background:var(--good)}
+.status-dot.warning{background:var(--warning)}
+.status-dot.amber{background:var(--accent-dark)}
+.status-dot.muted{background:var(--muted)}
 
 /* ---- controls ---- */
 .controls{
@@ -817,6 +827,10 @@ function statusIconSpan(b, extraClass){
   const { icon, cls } = contentStatusIcon(b);
   return `<span class="material-symbols-rounded status-icon ${cls}${extraClass ? ' '+extraClass : ''}" title="${esc(contentStatusText(b))}">${icon}</span>`;
 }
+function statusDetailLine(b){
+  const { cls } = contentStatusIcon(b);
+  return `<div class="beer-detail-row-line status-${cls}"><span class="beer-detail-icon"><span class="status-dot ${cls}"></span></span>${esc(contentStatusText(b))}</div>`;
+}
 
 function beerCardHtml(b){
   const brewery = window.breweryById[(b.breweryIds||[])[0]];
@@ -941,9 +955,10 @@ function beerRowHtml(b){
   const detailRow = `<tr class="beer-detail-row" data-id="${b.id}"><td colspan="5"><div class="beer-detail">
     ${img}
     <div class="beer-detail-meta">
-      <div class="beer-detail-row-line"><span class="material-symbols-rounded" style="font-size:14px;vertical-align:-2px">calendar_month</span>Logged ${shortDate(b.createdTime)}</div>
-      ${b.brewTagDetail ? `<div class="beer-detail-row-line">${esc(b.brewTagDetail)}</div>` : ''}
-      ${b.beerLink ? `<div class="beer-detail-row-line"><a href="${normalizeUrl(b.beerLink)}" target="_blank" rel="noopener" onclick="event.stopPropagation()">View post →</a></div>` : ''}
+      ${statusDetailLine(b)}
+      <div class="beer-detail-row-line"><span class="material-symbols-rounded beer-detail-icon">calendar_month</span>Logged ${shortDate(b.createdTime)}</div>
+      ${b.brewTagDetail ? `<div class="beer-detail-row-line"><span class="material-symbols-rounded beer-detail-icon">sell</span>${esc(b.brewTagDetail)}</div>` : ''}
+      ${b.beerLink ? `<div class="beer-detail-row-line"><span class="material-symbols-rounded beer-detail-icon">open_in_new</span><a href="${normalizeUrl(b.beerLink)}" target="_blank" rel="noopener" onclick="event.stopPropagation()">View post</a></div>` : ''}
     </div>
   </div></td></tr>`;
   return mainRow + detailRow;
