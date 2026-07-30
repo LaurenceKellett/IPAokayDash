@@ -714,6 +714,8 @@ $('#syncBtn').addEventListener('click', async () => {
     const d = lastBody?.diagnostics;
     if (d?.r2NotBound) msg += '. Photo cache (R2 bucket "DASH_IMAGES") isn\'t bound to this Pages project — check Settings → Functions.';
     else if (d?.noImageUrlsFound) msg += `. No image URLs found on any beer — "Image" property is type "${d.imagePropertyType || 'missing'}", found properties: ${d.beerPropertyNames.join(', ')}`;
+    else if (d?.timeBudgetExceededBeforeImages) msg += '. The Notion query alone took too long for this click to also cache photos — click Sync again.';
+    else if (d?.stoppedOnTimeBudget) msg += '. Stopped early to stay under the request time limit — click Sync again to continue.';
     else if (d?.imageErrors?.length) msg += '. Errors: ' + d.imageErrors.join(' | ');
     showToast(msg);
   } catch (e) {

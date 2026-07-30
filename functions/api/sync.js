@@ -28,10 +28,18 @@ import {
   errorResponse,
 } from '../_notion.js';
 
-const IMAGE_BATCH_LIMIT = 40;
+const IMAGE_BATCH_LIMIT = 20;
 const IMAGE_FETCH_CONCURRENCY = 8;
+// Cloudflare's edge gives an origin ~100s before returning its own 524
+// timeout page (which breaks the client's res.json() since it's HTML, not
+// JSON). Bail out of image caching — the slowest, most variable part of
+// this request — well before that, so a slow Notion response or a big
+// image batch can never blow through the hard limit; we just cache fewer
+// images this round and let the next "Sync now" click pick up the rest.
+const TIME_BUDGET_MS = 55000;
 
 export async function onRequestPost({ env }) {
+  const requestStart = Date.now();
   try {
     let breweryPages, beerPages;
     try {
@@ -116,10 +124,13 @@ export async function onRequestPost({ env }) {
     if (!env.DASH_IMAGES) {
       diagnostics.r2NotBound = true;
     }
-    const toCache = env.DASH_IMAGES
+    const timeLeft = () => TIME_BUDGET_MS - (Date.now() - requestStart);
+    const toCache = env.DASH_IMAGES && timeLeft() > 0
       ? beers.filter((b) => b._rawImageUrl && !b.imageCached).slice(0, IMAGE_BATCH_LIMIT)
       : [];
+    if (env.DASH_IMAGES && timeLeft() <= 0) diagnostics.timeBudgetExceededBeforeImages = true;
     let imagesCachedThisRun = 0;
+    let stoppedOnTimeBudget = false;
     const imageErrors = [];
     async function cacheOne(beer) {
       try {
@@ -140,8 +151,10 @@ export async function onRequestPost({ env }) {
       }
     }
     for (let i = 0; i < toCache.length; i += IMAGE_FETCH_CONCURRENCY) {
+      if (timeLeft() <= 0) { stoppedOnTimeBudget = true; break; }
       await Promise.all(toCache.slice(i, i + IMAGE_FETCH_CONCURRENCY).map(cacheOne));
     }
+    if (stoppedOnTimeBudget) diagnostics.stoppedOnTimeBudget = true;
     if (imageErrors.length) diagnostics.imageErrors = imageErrors;
 
     const imagesRemaining = beers.filter((b) => b._rawImageUrl && !b.imageCached).length;
