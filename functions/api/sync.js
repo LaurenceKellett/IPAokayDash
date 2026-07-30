@@ -33,10 +33,17 @@ const IMAGE_FETCH_CONCURRENCY = 8;
 
 export async function onRequestPost({ env }) {
   try {
-    const [breweryPages, beerPages] = await Promise.all([
-      notionQueryAll(env, env.NOTION_BREWERIES_DB_ID, {}),
-      notionQueryAll(env, env.NOTION_BEERS_DB_ID, {}),
-    ]);
+    let breweryPages, beerPages;
+    try {
+      [breweryPages, beerPages] = await Promise.all([
+        notionQueryAll(env, env.NOTION_BREWERIES_DB_ID, {}),
+        notionQueryAll(env, env.NOTION_BEERS_DB_ID, {}),
+      ]);
+    } catch (e) {
+      throw new Error(
+        `Querying Notion failed (breweries db id "${env.NOTION_BREWERIES_DB_ID}", beers db id "${env.NOTION_BEERS_DB_ID}", token set: ${!!env.NOTION_TOKEN}): ${e.message}`
+      );
+    }
 
     const breweries = breweryPages.map((page) => {
       const p = page.properties;
@@ -54,8 +61,13 @@ export async function onRequestPost({ env }) {
     });
 
     // Preserve image-cache bookkeeping across syncs.
-    const prevRaw = await env.DASH_KV.get('dataset');
-    const prev = prevRaw ? JSON.parse(prevRaw) : null;
+    let prev;
+    try {
+      const prevRaw = await env.DASH_KV.get('dataset');
+      prev = prevRaw ? JSON.parse(prevRaw) : null;
+    } catch (e) {
+      throw new Error(`Reading previous dataset from KV failed: ${e.message}`);
+    }
     const prevBeerById = Object.fromEntries((prev?.beers || []).map((b) => [b.id, b]));
 
     const beers = beerPages.map((page) => {
@@ -140,7 +152,11 @@ export async function onRequestPost({ env }) {
       beers,
       breweries,
     };
-    await env.DASH_KV.put('dataset', JSON.stringify(dataset));
+    try {
+      await env.DASH_KV.put('dataset', JSON.stringify(dataset));
+    } catch (e) {
+      throw new Error(`Writing dataset to KV failed: ${e.message}`);
+    }
 
     return json({
       ok: true,
