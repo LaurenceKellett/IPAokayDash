@@ -292,7 +292,7 @@ table.dt tr:hover td{background:var(--surface)}
 }
 .mini-btn:hover{background:var(--surface)}
 .mini-btn.active{background:var(--text);color:#fff;border-color:var(--text)}
-.pagesize-presets{display:flex;gap:6px;margin-top:2px}
+.filter-presets{display:flex;gap:6px;flex-wrap:wrap;margin-top:2px}
 /* Search bar is always visible, with the view toggle vertically centred
    on the same row instead of wrapping onto its own line below. */
 .filters-toprow{display:flex;gap:8px;align-items:center}
@@ -499,11 +499,6 @@ table.dt tr:hover td{background:var(--surface)}
             <div class="filter-field">
               <div class="filter-field-label"><span class="material-symbols-rounded">view_list</span>Per page<span class="slider-field-value" id="beerPageSizeLabel">50</span></div>
               <input type="range" id="beerPageSize" min="5" max="200" step="5" value="50">
-              <div class="pagesize-presets">
-                <button type="button" class="mini-btn" data-page-size="5">5</button>
-                <button type="button" class="mini-btn" data-page-size="10">10</button>
-                <button type="button" class="mini-btn" data-page-size="15">15</button>
-              </div>
             </div>
           </div>
         </div>
@@ -548,10 +543,22 @@ table.dt tr:hover td{background:var(--surface)}
             <div class="slider-field">
               <div class="slider-field-label"><span>Min beers</span><span class="slider-field-value" id="breweryMinBeersLabel">Any</span></div>
               <input type="range" id="breweryMinBeers" min="0" max="10" step="1" value="0">
+              <div class="filter-presets">
+                <button type="button" class="mini-btn" data-target="breweryMinBeers" data-preset="5">5</button>
+                <button type="button" class="mini-btn" data-target="breweryMinBeers" data-preset="10">10</button>
+                <button type="button" class="mini-btn" data-target="breweryMinBeers" data-preset="20">20</button>
+                <button type="button" class="mini-btn" data-target="breweryMinBeers" data-preset="30">30</button>
+              </div>
             </div>
             <div class="slider-field">
               <div class="slider-field-label"><span>Min avg rating</span><span class="slider-field-value" id="breweryMinRatingLabel">Any</span></div>
               <input type="range" id="breweryMinRating" min="0" max="100" step="1" value="0">
+              <div class="filter-presets">
+                <button type="button" class="mini-btn" data-target="breweryMinRating" data-preset="60">60</button>
+                <button type="button" class="mini-btn" data-target="breweryMinRating" data-preset="70">70</button>
+                <button type="button" class="mini-btn" data-target="breweryMinRating" data-preset="80">80</button>
+                <button type="button" class="mini-btn" data-target="breweryMinRating" data-preset="90">90</button>
+              </div>
             </div>
             <div class="slider-field" style="justify-content:flex-end">
               <button type="button" class="mini-btn" id="breweryFiltersReset"><span class="material-symbols-rounded" style="font-size:14px;vertical-align:-2px">restart_alt</span>Reset filters</button>
@@ -1094,15 +1101,10 @@ function updateSortArrows(theadEl, sortState){
 // ---------------- beers tab ----------------
 let beersPage = 0, beersGalPage = 0;
 // One user-selectable page size (5-200) drives both the table and
-// gallery views. Small presets (5/10/15) jump straight to a value;
-// the slider covers everything else.
+// gallery views.
 function currentPageSize(){ return Number($('#beerPageSize').value) || 50; }
 function updateBeerPageSizeLabel(){
-  const size = currentPageSize();
-  $('#beerPageSizeLabel').textContent = size;
-  $$('.pagesize-presets .mini-btn').forEach(btn => {
-    btn.classList.toggle('active', Number(btn.dataset.pageSize) === size);
-  });
+  $('#beerPageSizeLabel').textContent = currentPageSize();
 }
 let expandedBeers = new Set();
 
@@ -1309,12 +1311,6 @@ BEER_FILTER_IDS.forEach(id => {
     renderBeersTable(); renderBeersGallery();
   });
 });
-$$('.pagesize-presets .mini-btn').forEach(btn => {
-  btn.addEventListener('click', () => {
-    $('#beerPageSize').value = btn.dataset.pageSize;
-    $('#beerPageSize').dispatchEvent(new Event('input', { bubbles: true }));
-  });
-});
 $('#beersPrev').addEventListener('click', () => { beersPage--; renderBeersTable(); });
 $('#beersNext').addEventListener('click', () => { beersPage++; renderBeersTable(); });
 $('#beersGalPrev').addEventListener('click', () => { beersGalPage--; renderBeersGallery(); });
@@ -1427,7 +1423,9 @@ function breweryRowHtml(b){
 // current dataset (instead of a guessed fixed max), and refreshes both
 // slider labels to match their current values.
 function populateBreweryFilters(){
-  const maxCount = Math.max(1, ...DATA.breweries.map(b => b._count || 0));
+  // At least 30 so the 5/10/20/30 quick-selects are always reachable,
+  // even if no brewery in the current data actually has that many beers.
+  const maxCount = Math.max(30, ...DATA.breweries.map(b => b._count || 0));
   $('#breweryMinBeers').max = maxCount;
   updateBreweryRangeLabels();
 }
@@ -1436,6 +1434,10 @@ function updateBreweryRangeLabels(){
   const minRating = Number($('#breweryMinRating').value);
   $('#breweryMinBeersLabel').textContent = minBeers === 0 ? 'Any' : `${minBeers}+ beers`;
   $('#breweryMinRatingLabel').textContent = minRating === 0 ? 'Any' : `${minRating}+ avg`;
+  $$('#breweriesControls .filter-presets .mini-btn').forEach(btn => {
+    const current = Number($('#'+btn.dataset.target).value);
+    btn.classList.toggle('active', Number(btn.dataset.preset) === current);
+  });
 }
 
 function renderBreweriesTable(){
@@ -1475,6 +1477,13 @@ $('#breweryFiltersReset').addEventListener('click', () => {
   updateBreweryRangeLabels();
   saveState({ breweries: { ...loadState().breweries, breweryMinBeers: '0', breweryMinRating: '0' } });
   renderBreweriesTable();
+});
+$$('#breweriesControls .filter-presets .mini-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const target = $('#'+btn.dataset.target);
+    target.value = btn.dataset.preset;
+    target.dispatchEvent(new Event('input', { bubbles: true }));
+  });
 });
 let breweryControlsRestored = false;
 function restoreBreweryControls(){
