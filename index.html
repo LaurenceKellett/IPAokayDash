@@ -176,24 +176,26 @@ table.dt tr:hover td{background:var(--surface)}
 .brewery-detail-item:last-child{border-bottom:none}
 .beer-row{cursor:pointer}
 .beer-detail-row td{background:var(--surface);border-top:none;padding:8px 10px 14px}
-.beer-detail{position:relative;border-radius:10px;overflow:hidden;min-height:128px;background:var(--surface)}
-/* Fixed-size window that owns the fade mask; the photo inside it is
-   zoomed and shifted left so the (usually centred) beer subject lands
-   inside the fully-opaque part of the window instead of at its own
-   centre, which would sit under the fade. */
+/* Flex layout (not absolute positioning) so the photo column stretches to
+   match whatever height the text column ends up needing — a percentage
+   height on an absolutely-positioned child can't resolve against an
+   auto-height parent, which is what left gaps below short photos. The
+   text column then overlaps the photo's tail via a negative margin, which
+   is where the fade mask does its work. */
+.beer-detail{display:flex;align-items:stretch;border-radius:10px;overflow:hidden;min-height:128px;background:var(--surface)}
 .beer-detail-photo-wrap{
-  position:absolute;top:0;left:0;height:100%;width:230px;overflow:hidden;
+  position:relative;flex:none;width:230px;overflow:hidden;
   -webkit-mask-image:linear-gradient(to right,#000 0%,#000 30%,transparent 92%);
   mask-image:linear-gradient(to right,#000 0%,#000 30%,transparent 92%);
 }
 .beer-detail-photo{position:absolute;top:0;left:-67%;width:170%;height:100%;object-fit:cover}
-.beer-detail-photo-empty{width:100%;height:100%;background:var(--hop-soft);display:flex;align-items:center;padding-left:20px;color:var(--muted)}
+.beer-detail-photo-empty{position:absolute;inset:0;background:var(--hop-soft);display:flex;align-items:center;padding-left:20px;color:var(--muted)}
 .beer-detail-photo-empty .material-symbols-rounded{font-size:26px}
-.beer-detail-meta{position:relative;z-index:1;display:flex;flex-direction:column;gap:6px;font-size:12px;color:var(--muted);padding:18px 18px 18px 190px}
+.beer-detail-meta{position:relative;z-index:1;flex:1 1 auto;min-width:0;display:flex;flex-direction:column;gap:6px;font-size:12px;color:var(--muted);margin-left:-40px;padding:18px 18px 18px 8px}
 @media (max-width:860px){
   .beer-detail{min-height:96px}
   .beer-detail-photo-wrap{width:130px}
-  .beer-detail-meta{padding-left:112px;padding-top:12px;padding-bottom:12px}
+  .beer-detail-meta{margin-left:-18px;padding:12px 14px 12px 6px}
 }
 .beer-detail-row-line{display:flex;align-items:center;gap:6px}
 .beer-detail-row-line a{font-weight:700}
@@ -215,10 +217,20 @@ table.dt tr:hover td{background:var(--surface)}
 /* ---- beers table: fixed columns so long names truncate instead of wrapping ---- */
 #beersTable{table-layout:fixed}
 #beersTable td{padding:9px 6px 9px 0}
+#beersTable col.col-brewery{width:150px}
+#beersTable col.col-rating{width:100px}
 .beer-name-cell{display:flex;align-items:center;gap:4px;overflow:hidden}
 .beer-name-text{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .beer-brewery-cell{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .beer-detail-name{font-size:14px;font-weight:800;color:var(--text)}
+@media (max-width:860px){
+  /* Brewery/Rating give up most of their width back to the beer name —
+     the full brewery name is still one tap away in the detail toggle. */
+  #beersTable col.col-brewery{width:76px}
+  #beersTable col.col-rating{width:82px}
+  .rating-bar{width:38px}
+  .rating-cell{gap:4px}
+}
 
 /* ---- controls ---- */
 .filters-card{padding:10px 14px}
@@ -416,7 +428,7 @@ table.dt tr:hover td{background:var(--surface)}
         <div class="card" id="beersTableCard">
           <div class="table-scroll">
           <table class="dt" id="beersTable">
-            <colgroup><col><col style="width:150px"><col style="width:100px"></colgroup>
+            <colgroup><col><col class="col-brewery"><col class="col-rating"></colgroup>
             <thead><tr>
               <th>Beer</th>
               <th>Brewery</th>
@@ -1064,6 +1076,7 @@ function beerRowHtml(b){
     ${img}
     <div class="beer-detail-meta">
       <div class="beer-detail-name">${esc(b.name)}</div>
+      <div class="beer-detail-row-line"><span class="material-symbols-rounded beer-detail-icon">factory</span>${brewery ? esc(brewery.name) : '—'}</div>
       ${statusDetailLine(b)}
       <div class="beer-detail-row-line"><span class="material-symbols-rounded beer-detail-icon">category</span><span class="tagchip"><span class="tagdot" style="background:${familyColor(b.brewTagFamily)}"></span>${esc(b.brewTag||'—')}</span></div>
       <div class="beer-detail-row-line"><span class="material-symbols-rounded beer-detail-icon">percent</span>${fmtPct(b.abv)} ABV</div>
