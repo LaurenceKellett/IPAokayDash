@@ -31,6 +31,7 @@
   --warning:#b45309;
   --warning-soft:#fffbeb;
   --rating-purple:#7c5cbf;
+  --placeholder-bg:#f5f4f2;
   --shadow:0 1px 2px rgba(15,23,42,.04),0 10px 26px rgba(15,23,42,.06);
   --radius:10px;
   --radius-sm:6px;
@@ -167,7 +168,7 @@ a:hover{text-decoration:underline}
 /* ---- gallery ---- */
 .gallery{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:11px}
 .gcard{background:var(--card);border:1px solid var(--border);border-radius:7px;overflow:hidden;box-shadow:var(--shadow);border-top:3px solid var(--border-strong);cursor:pointer}
-.gimg{aspect-ratio:1;background:var(--hop-soft);display:flex;align-items:center;justify-content:center;font-size:24px;overflow:hidden}
+.gimg{aspect-ratio:1;background:var(--placeholder-bg);display:flex;align-items:center;justify-content:center;font-size:24px;overflow:hidden}
 .gimg img{width:100%;height:100%;object-fit:cover}
 .gmeta{padding:8px 9px}
 .gname{font-size:11.5px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -225,8 +226,12 @@ table.dt tr:hover td{background:var(--surface)}
   mask-image:linear-gradient(to right,#000 0%,#000 24%,transparent 93%);
 }
 .beer-detail-photo{position:absolute;top:0;left:-9%;width:110%;height:100%;object-fit:cover}
-.beer-detail-photo-empty{position:absolute;inset:0;background:var(--hop-soft);display:flex;align-items:center;padding-left:20px;color:var(--muted)}
+.beer-detail-photo-empty{position:absolute;inset:0;background:var(--placeholder-bg);display:flex;align-items:center;padding-left:20px;color:var(--muted)}
 .beer-detail-photo-empty .material-symbols-rounded{font-size:26px}
+/* A slow breathing fade rather than a static icon, so an unphotographed
+   beer's placeholder reads as "not there yet" instead of a dead end. */
+@keyframes placeholderPulse{0%,100%{opacity:.28}50%{opacity:1}}
+.placeholder-icon{animation:placeholderPulse 4s ease-in-out infinite}
 .beer-detail-meta{position:relative;z-index:1;display:flex;flex-direction:column;gap:6px;font-size:12px;color:var(--muted);padding:18px 18px 18px 190px}
 @media (max-width:860px){
   .beer-detail{min-height:96px}
@@ -1166,7 +1171,7 @@ function ratingBarHtml(b){
 
 function beerCardHtml(b){
   const brewery = window.breweryById[(b.breweryIds||[])[0]];
-  const img = b.imageCached ? `<img src="/img/${b.id}" loading="lazy" alt="">` : '<span class="material-symbols-rounded" style="font-size:22px;color:var(--muted)">local_bar</span>';
+  const img = b.imageCached ? `<img src="/img/${b.id}" loading="lazy" alt="">` : '<span class="material-symbols-rounded placeholder-icon" style="font-size:22px;color:var(--muted)">sports_bar</span>';
   return `<div class="gcard" data-beer-id="${b.id}" style="border-top-color:${familyColor(b.brewTagFamily)}"><div class="gimg">${img}</div><div class="gmeta">
     <div class="gname" title="${esc(b.name)}">${esc(b.name)}</div>
     <div class="gsub">${brewery ? esc(brewery.name)+' · ' : ''}${b.rating ?? '—'}</div>
@@ -1310,7 +1315,7 @@ function beerDetailBodyHtml(b){
   const img = `<div class="beer-detail-photo-wrap">${
     b.imageCached
       ? `<img class="beer-detail-photo" src="/img/${b.id}" loading="lazy" alt="">`
-      : `<div class="beer-detail-photo-empty"><span class="material-symbols-rounded">local_bar</span></div>`
+      : `<div class="beer-detail-photo-empty"><span class="material-symbols-rounded placeholder-icon">sports_bar</span></div>`
   }</div>`;
   return `<div class="beer-detail">
     ${img}
