@@ -690,7 +690,10 @@ function setupFilterToggle(toggleId, controlsId, stateKey){
     controls.style.display = collapsed ? 'none' : '';
     btn.classList.toggle('collapsed', collapsed);
   }
-  apply(!!(loadState().filtersCollapsed || {})[stateKey]);
+  // Default to collapsed when there's no saved preference yet; once the
+  // user has toggled it, their choice persists as before.
+  const saved = (loadState().filtersCollapsed || {})[stateKey];
+  apply(saved != null ? !!saved : true);
   btn.addEventListener('click', () => {
     const collapsed = controls.style.display !== 'none';
     apply(collapsed);
