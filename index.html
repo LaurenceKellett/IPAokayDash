@@ -306,6 +306,10 @@ table.dt tr:hover td{background:var(--surface)}
   border-radius:6px;color:var(--muted);cursor:pointer;
 }
 .icon-btn:hover{background:var(--surface);color:var(--text)}
+/* Depth counter between the Expand/Compact icon buttons — each click of
+   Expand walks one nesting level deeper (e.g. Family, then Brew Tag, then
+   beers on the Styles tab) rather than opening everything at once. */
+.expand-depth{font-size:10.5px;font-weight:700;color:var(--muted);min-width:20px;text-align:center;flex:none;font-variant-numeric:tabular-nums}
 .filter-presets{display:flex;gap:6px;flex-wrap:wrap;margin-top:2px}
 /* Search bar is always visible, with the view toggle vertically centred
    on the same row instead of wrapping onto its own line below. */
@@ -475,8 +479,9 @@ table.dt tr:hover td{background:var(--surface)}
         <div class="card filters-card">
           <div class="filters-toprow">
             <input class="field" type="text" id="beerSearch" placeholder="Search beer or brewery…">
-            <button type="button" class="icon-btn" id="beersExpandAllBtn" title="Expand all"><span class="material-symbols-rounded" style="font-size:16px">unfold_more</span></button>
-            <button type="button" class="icon-btn" id="beersCollapseAllBtn" title="Collapse all"><span class="material-symbols-rounded" style="font-size:16px">unfold_less</span></button>
+            <button type="button" class="icon-btn" id="beersExpandAllBtn" title="Expand"><span class="material-symbols-rounded" style="font-size:16px">unfold_more</span></button>
+            <span class="expand-depth" id="beersExpandDepth" title="Expand depth">0/1</span>
+            <button type="button" class="icon-btn" id="beersCollapseAllBtn" title="Compact"><span class="material-symbols-rounded" style="font-size:16px">unfold_less</span></button>
             <div class="viewtoggle">
               <button class="active" data-view="table"><span class="material-symbols-rounded" style="font-size:15px">table_rows</span></button>
               <button data-view="gallery"><span class="material-symbols-rounded" style="font-size:15px">grid_view</span></button>
@@ -563,8 +568,9 @@ table.dt tr:hover td{background:var(--surface)}
         <div class="card filters-card">
           <div class="filters-toprow">
             <input class="field" type="text" id="brewerySearch" placeholder="Search breweries…">
-            <button type="button" class="icon-btn" id="breweriesExpandAllBtn" title="Expand all"><span class="material-symbols-rounded" style="font-size:16px">unfold_more</span></button>
-            <button type="button" class="icon-btn" id="breweriesCollapseAllBtn" title="Collapse all"><span class="material-symbols-rounded" style="font-size:16px">unfold_less</span></button>
+            <button type="button" class="icon-btn" id="breweriesExpandAllBtn" title="Expand"><span class="material-symbols-rounded" style="font-size:16px">unfold_more</span></button>
+            <span class="expand-depth" id="breweriesExpandDepth" title="Expand depth">0/2</span>
+            <button type="button" class="icon-btn" id="breweriesCollapseAllBtn" title="Compact"><span class="material-symbols-rounded" style="font-size:16px">unfold_less</span></button>
           </div>
           <button class="filters-toggle" id="breweriesFiltersToggle" type="button">
             <span class="material-symbols-rounded" style="font-size:16px">tune</span>Filters
@@ -615,8 +621,9 @@ table.dt tr:hover td{background:var(--surface)}
         <div class="card filters-card">
           <div class="filters-toprow">
             <input class="field" type="text" id="styleSearch" placeholder="Search styles…">
-            <button type="button" class="icon-btn" id="stylesExpandAllBtn" title="Expand all"><span class="material-symbols-rounded" style="font-size:16px">unfold_more</span></button>
-            <button type="button" class="icon-btn" id="stylesCollapseAllBtn" title="Collapse all"><span class="material-symbols-rounded" style="font-size:16px">unfold_less</span></button>
+            <button type="button" class="icon-btn" id="stylesExpandAllBtn" title="Expand"><span class="material-symbols-rounded" style="font-size:16px">unfold_more</span></button>
+            <span class="expand-depth" id="stylesExpandDepth" title="Expand depth">0/3</span>
+            <button type="button" class="icon-btn" id="stylesCollapseAllBtn" title="Compact"><span class="material-symbols-rounded" style="font-size:16px">unfold_less</span></button>
           </div>
           <button class="filters-toggle" id="stylesFiltersToggle" type="button">
             <span class="material-symbols-rounded" style="font-size:16px">tune</span>Filters
@@ -1480,14 +1487,19 @@ function restoreBeerControls(){
 // Expand/collapse every currently-filtered beer's detail row at once,
 // instead of clicking each one — table view only (the gallery view opens
 // a modal per card rather than an inline toggle).
-$('#beersExpandAllBtn').addEventListener('click', () => {
-  filteredSortedBeers().forEach(b => expandedBeers.add(b.id));
+// Only one nesting level exists on the Beers table (the row's own detail),
+// so depth just toggles between 0 (all collapsed) and 1 (all open) — but
+// tracked the same way as the deeper Breweries/Styles tabs for consistency.
+const BEERS_MAX_DEPTH = 1;
+let beersExpandDepth = 0;
+function applyBeersDepth(depth){
+  beersExpandDepth = depth;
+  expandedBeers = depth >= 1 ? new Set(filteredSortedBeers().map(b => b.id)) : new Set();
+  $('#beersExpandDepth').textContent = `${depth}/${BEERS_MAX_DEPTH}`;
   renderBeersTable();
-});
-$('#beersCollapseAllBtn').addEventListener('click', () => {
-  expandedBeers.clear();
-  renderBeersTable();
-});
+}
+$('#beersExpandAllBtn').addEventListener('click', () => applyBeersDepth(Math.min(BEERS_MAX_DEPTH, beersExpandDepth + 1)));
+$('#beersCollapseAllBtn').addEventListener('click', () => applyBeersDepth(Math.max(0, beersExpandDepth - 1)));
 
 // ---------------- breweries tab ----------------
 let breweriesSort = { field:'_avgRating', dir:'desc' };
@@ -1647,22 +1659,33 @@ $('#breweriesTableBody').addEventListener('click', (e) => {
 // Expand/collapse every currently-filtered brewery's beer list at once —
 // opens the brewery -> beer list level only, not each beer's own nested
 // photo detail, so it doesn't turn into a wall of images.
-$('#breweriesExpandAllBtn').addEventListener('click', () => {
+function filteredBreweries(){
   const q = $('#brewerySearch').value.trim().toLowerCase();
   const minBeers = Number($('#breweryMinBeers').value);
   const minRating = Number($('#breweryMinRating').value);
-  DATA.breweries.filter(b =>
+  return DATA.breweries.filter(b =>
     (b._count||0) >= minBeers &&
     (minRating === 0 || (b._avgRating != null && b._avgRating >= minRating)) &&
     (!q || b.name.toLowerCase().includes(q))
-  ).forEach(b => expandedBreweries.add(b.id));
+  );
+}
+// Depth 1 = every matching brewery opened (its beer list visible).
+// Depth 2 = every one of those beers' own nested detail (photo card) also
+// opened — one click per nesting level, deepest last.
+const BREWERIES_MAX_DEPTH = 2;
+let breweriesExpandDepth = 0;
+function applyBreweriesDepth(depth){
+  breweriesExpandDepth = depth;
+  const breweries = depth >= 1 ? filteredBreweries() : [];
+  expandedBreweries = new Set(breweries.map(b => b.id));
+  expandedBreweryBeers = depth >= 2
+    ? new Set(DATA.beers.filter(beer => breweries.some(b => (beer.breweryIds||[]).includes(b.id))).map(beer => beer.id))
+    : new Set();
+  $('#breweriesExpandDepth').textContent = `${depth}/${BREWERIES_MAX_DEPTH}`;
   renderBreweriesTable();
-});
-$('#breweriesCollapseAllBtn').addEventListener('click', () => {
-  expandedBreweries.clear();
-  expandedBreweryBeers.clear();
-  renderBreweriesTable();
-});
+}
+$('#breweriesExpandAllBtn').addEventListener('click', () => applyBreweriesDepth(Math.min(BREWERIES_MAX_DEPTH, breweriesExpandDepth + 1)));
+$('#breweriesCollapseAllBtn').addEventListener('click', () => applyBreweriesDepth(Math.max(0, breweriesExpandDepth - 1)));
 
 // ---------------- styles tab ----------------
 // Three levels deep: broad Family (from BREW_TAG_FAMILIES) -> specific
@@ -1839,29 +1862,45 @@ $('#stylesTableBody').addEventListener('click', (e) => {
 // at once — opens both the Family and Brew Tag levels so the whole
 // hierarchy is browsable, but leaves each beer's own nested photo detail
 // closed so it doesn't turn into a wall of images.
-$('#stylesExpandAllBtn').addEventListener('click', () => {
+// Three nesting levels, one per click: 1 = Family, 2 = + Brew Tag,
+// 3 = + each beer's own nested photo detail.
+const STYLES_MAX_DEPTH = 3;
+let stylesExpandDepth = 0;
+function applyStylesDepth(depth){
+  stylesExpandDepth = depth;
   const groups = computeStyleGroups();
   const q = $('#styleSearch').value.trim().toLowerCase();
   const minBeers = Number($('#styleMinBeers').value);
   const minRating = Number($('#styleMinRating').value);
-  for (const [family, stats] of Object.entries(groups)) {
-    let anyTagPassed = false;
-    for (const [tag, t] of Object.entries(stats.tags)) {
-      if (styleTagPasses(family, tag, t, q, minBeers, minRating)) {
-        expandedStyleTags.add(family + '::' + tag);
+  const families = new Set();
+  const tagKeys = new Set();
+  const beerIds = new Set();
+  if (depth >= 1) {
+    for (const [family, stats] of Object.entries(groups)) {
+      let anyTagPassed = false;
+      for (const [tag, t] of Object.entries(stats.tags)) {
+        if (!styleTagPasses(family, tag, t, q, minBeers, minRating)) continue;
         anyTagPassed = true;
+        if (depth >= 2) {
+          tagKeys.add(family + '::' + tag);
+          if (depth >= 3) {
+            DATA.beers.forEach(b => {
+              if ((b.brewTagFamily||'Other') === family && (b.brewTag||'Unspecified') === tag) beerIds.add(b.id);
+            });
+          }
+        }
       }
+      if (anyTagPassed) families.add(family);
     }
-    if (anyTagPassed) expandedStyleFamilies.add(family);
   }
+  expandedStyleFamilies = families;
+  expandedStyleTags = tagKeys;
+  expandedStyleBeers = beerIds;
+  $('#stylesExpandDepth').textContent = `${depth}/${STYLES_MAX_DEPTH}`;
   renderStylesTable();
-});
-$('#stylesCollapseAllBtn').addEventListener('click', () => {
-  expandedStyleFamilies.clear();
-  expandedStyleTags.clear();
-  expandedStyleBeers.clear();
-  renderStylesTable();
-});
+}
+$('#stylesExpandAllBtn').addEventListener('click', () => applyStylesDepth(Math.min(STYLES_MAX_DEPTH, stylesExpandDepth + 1)));
+$('#stylesCollapseAllBtn').addEventListener('click', () => applyStylesDepth(Math.max(0, stylesExpandDepth - 1)));
 
 function renderLocationList(){
   const stats = {};
