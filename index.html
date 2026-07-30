@@ -273,6 +273,10 @@ table.dt tr:hover td{background:var(--surface)}
   border-radius:6px;outline:none;font-family:var(--font-family);height:36px;color:var(--text);width:100%;
 }
 .field:focus{border-color:var(--text)}
+.slider-field{display:flex;flex-direction:column;justify-content:center;gap:5px;min-width:150px}
+.slider-field-label{display:flex;justify-content:space-between;font-size:11px;font-weight:700;color:var(--muted)}
+.slider-field-label .slider-field-value{color:var(--text);font-variant-numeric:tabular-nums}
+.slider-field input[type=range]{width:100%;height:20px;accent-color:var(--rating-purple);cursor:pointer}
 /* Search bar is always visible, with the view toggle vertically centred
    on the same row instead of wrapping onto its own line below. */
 .filters-toprow{display:flex;gap:8px;align-items:center}
@@ -511,12 +515,14 @@ table.dt tr:hover td{background:var(--surface)}
             <span class="material-symbols-rounded filters-chevron">expand_less</span>
           </button>
           <div class="controls" id="breweriesControls">
-            <select class="field" id="breweryMinBeers">
-              <option value="0">Any beer count</option>
-              <option value="3">3+ beers</option>
-              <option value="5">5+ beers</option>
-              <option value="10">10+ beers</option>
-            </select>
+            <div class="slider-field">
+              <div class="slider-field-label"><span>Min beers</span><span class="slider-field-value" id="breweryMinBeersLabel">Any</span></div>
+              <input type="range" id="breweryMinBeers" min="0" max="10" step="1" value="0">
+            </div>
+            <div class="slider-field">
+              <div class="slider-field-label"><span>Min avg rating</span><span class="slider-field-value" id="breweryMinRatingLabel">Any</span></div>
+              <input type="range" id="breweryMinRating" min="0" max="100" step="1" value="0">
+            </div>
           </div>
         </div>
         <div class="card">
@@ -808,6 +814,7 @@ function renderAll(){
   renderRecentGallery();
   populateBeerFilters();
   restoreBeerControls();
+  populateBreweryFilters();
   restoreBreweryControls();
   renderBeersTable();
   renderBeersGallery();
@@ -1309,7 +1316,9 @@ function goToBrewery(breweryId){
   saveState({ tab: 'breweries' });
   $('#brewerySearch').value = '';
   $('#breweryMinBeers').value = '0';
-  saveState({ breweries: { brewerySearch: '', breweryMinBeers: '0' } });
+  $('#breweryMinRating').value = '0';
+  updateBreweryRangeLabels();
+  saveState({ breweries: { brewerySearch: '', breweryMinBeers: '0', breweryMinRating: '0' } });
   expandedBreweries = new Set([breweryId]);
   renderBreweriesTable();
   closeSidebar();
@@ -1353,11 +1362,31 @@ function breweryRowHtml(b){
   return mainRow + detailRow;
 }
 
+// Sets the beer-count slider's ceiling to the busiest brewery in the
+// current dataset (instead of a guessed fixed max), and refreshes both
+// slider labels to match their current values.
+function populateBreweryFilters(){
+  const maxCount = Math.max(1, ...DATA.breweries.map(b => b._count || 0));
+  $('#breweryMinBeers').max = maxCount;
+  updateBreweryRangeLabels();
+}
+function updateBreweryRangeLabels(){
+  const minBeers = Number($('#breweryMinBeers').value);
+  const minRating = Number($('#breweryMinRating').value);
+  $('#breweryMinBeersLabel').textContent = minBeers === 0 ? 'Any' : `${minBeers}+ beers`;
+  $('#breweryMinRatingLabel').textContent = minRating === 0 ? 'Any' : `${minRating}+ avg`;
+}
+
 function renderBreweriesTable(){
   updateSortArrows($('#view-breweries thead'), breweriesSort);
   const q = $('#brewerySearch').value.trim().toLowerCase();
   const minBeers = Number($('#breweryMinBeers').value);
-  const rows = DATA.breweries.filter(b => (b._count||0) >= minBeers && (!q || b.name.toLowerCase().includes(q)));
+  const minRating = Number($('#breweryMinRating').value);
+  const rows = DATA.breweries.filter(b =>
+    (b._count||0) >= minBeers &&
+    (minRating === 0 || (b._avgRating != null && b._avgRating >= minRating)) &&
+    (!q || b.name.toLowerCase().includes(q))
+  );
   const { field, dir } = breweriesSort;
   rows.sort((a,b) => {
     let av = field === 'name' ? (a[field]||'').toLowerCase() : a[field];
@@ -1371,9 +1400,10 @@ function renderBreweriesTable(){
   syncDetailPhotoHeights();
 }
 bindSortableHeaders($('#view-breweries thead'), breweriesSort, BREWERIES_DEFAULT_DIR, renderBreweriesTable);
-const BREWERY_FILTER_IDS = ['brewerySearch','breweryMinBeers'];
+const BREWERY_FILTER_IDS = ['brewerySearch','breweryMinBeers','breweryMinRating'];
 BREWERY_FILTER_IDS.forEach(id => {
-  $('#'+id).addEventListener(id === 'breweryMinBeers' ? 'change' : 'input', () => {
+  $('#'+id).addEventListener('input', () => {
+    updateBreweryRangeLabels();
     saveState({ breweries: { ...loadState().breweries, [id]: $('#'+id).value } });
     renderBreweriesTable();
   });
@@ -1384,6 +1414,7 @@ function restoreBreweryControls(){
   breweryControlsRestored = true;
   const saved = loadState().breweries || {};
   BREWERY_FILTER_IDS.forEach(id => { if (saved[id] != null) $('#'+id).value = saved[id]; });
+  updateBreweryRangeLabels();
 }
 $('#breweriesTableBody').addEventListener('click', (e) => {
   if (e.target.closest('a')) return;
