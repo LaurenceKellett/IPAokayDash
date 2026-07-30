@@ -194,6 +194,7 @@ table.dt tr:hover td{background:var(--surface)}
 .brewery-detail-meta{display:flex;flex-wrap:wrap;gap:16px;font-size:12px;color:var(--muted);font-weight:600;padding:8px 0 10px}
 .brewery-detail-meta a{color:var(--muted);font-weight:600}
 .brewery-detail-meta a:hover{color:var(--text)}
+.brewery-detail-summary{font-size:12.5px;line-height:1.6;color:var(--text);white-space:pre-line;margin:0 0 12px;max-width:640px}
 .brewery-detail-divider{height:1px;background:var(--border);margin-bottom:8px}
 .brewery-detail-item{display:flex;align-items:center;gap:8px;font-size:12px;padding:6px 4px;border-bottom:1px solid var(--border);cursor:pointer;border-radius:6px}
 .brewery-detail-item:hover{background:var(--card)}
@@ -1433,7 +1434,7 @@ function breweryRowHtml(b){
   const expanded = expandedBreweries.has(b.id);
   const chevron = expanded ? 'expand_less' : 'expand_more';
   const mainRow = `<tr class="brewery-row" data-id="${b.id}">
-    <td><span class="material-symbols-rounded" style="font-size:16px;vertical-align:-3px;color:var(--muted)">${chevron}</span> <strong>${b.ipaokayLink ? `<a href="${normalizeUrl(b.ipaokayLink)}" target="_blank" rel="noopener" onclick="event.stopPropagation()">${esc(b.name)}</a>` : esc(b.name)}</strong></td>
+    <td><span class="material-symbols-rounded" style="font-size:16px;vertical-align:-3px;color:var(--muted)">${chevron}</span> <strong>${esc(b.name)}</strong></td>
     <td>${b._count||0}</td>
     <td>${b._avgRating != null ? `<span class="pill ${b._avgRating>=80?'good':'amber'}">${b._avgRating.toFixed(0)}</span>` : '—'}</td>
   </tr>`;
@@ -1442,8 +1443,10 @@ function breweryRowHtml(b){
     .sort((a,c) => (c.rating ?? -1) - (a.rating ?? -1));
   const meta = `<div class="brewery-detail-meta">
       <span><span class="material-symbols-rounded" style="font-size:14px;vertical-align:-2px">location_on</span>${esc(b.location||'Unknown location')}</span>
-      ${b.website ? `<span><a href="${normalizeUrl(b.website)}" target="_blank" rel="noopener" onclick="event.stopPropagation()"><span class="material-symbols-rounded" style="font-size:14px;vertical-align:-2px">language</span>Website</a></span>` : ''}
+      ${b.website ? `<span><a href="${normalizeUrl(b.website)}" target="_blank" rel="noopener" onclick="event.stopPropagation()"><span class="material-symbols-rounded" style="font-size:14px;vertical-align:-2px">language</span>Brewery site</a></span>` : ''}
+      ${b.ipaokayLink ? `<span><a href="${normalizeUrl(b.ipaokayLink)}" target="_blank" rel="noopener" onclick="event.stopPropagation()"><span class="material-symbols-rounded" style="font-size:14px;vertical-align:-2px">open_in_new</span>IPAokay page</a></span>` : ''}
     </div>
+    ${b.summary ? `<p class="brewery-detail-summary">${esc(b.summary)}</p>` : ''}
     <div class="brewery-detail-divider"></div>`;
   const items = beers.map(beer => {
     const beerExpanded = expandedBreweryBeers.has(beer.id);
