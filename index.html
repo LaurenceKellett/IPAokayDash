@@ -224,7 +224,7 @@ table.dt tr:hover td{background:var(--surface)}
   -webkit-mask-image:linear-gradient(to right,#000 0%,#000 24%,transparent 93%);
   mask-image:linear-gradient(to right,#000 0%,#000 24%,transparent 93%);
 }
-.beer-detail-photo{position:absolute;top:0;left:-48%;width:150%;height:100%;object-fit:cover}
+.beer-detail-photo{position:absolute;top:0;left:-30%;width:135%;height:100%;object-fit:cover}
 .beer-detail-photo-empty{position:absolute;inset:0;background:var(--hop-soft);display:flex;align-items:center;padding-left:20px;color:var(--muted)}
 .beer-detail-photo-empty .material-symbols-rounded{font-size:26px}
 .beer-detail-meta{position:relative;z-index:1;display:flex;flex-direction:column;gap:6px;font-size:12px;color:var(--muted);padding:18px 18px 18px 190px}
@@ -297,6 +297,15 @@ table.dt tr:hover td{background:var(--surface)}
 }
 .mini-btn:hover{background:var(--surface)}
 .mini-btn.active{background:var(--text);color:#fff;border-color:var(--text)}
+/* Subtle icon-only expand-all/collapse-all pair, sitting right next to
+   the search bar on the Beers/Breweries/Styles tabs — small enough not to
+   compete with the search field, but always in easy reach. */
+.icon-btn{
+  display:inline-flex;align-items:center;justify-content:center;flex:none;
+  width:36px;height:36px;border:1px solid var(--border);background:var(--card);
+  border-radius:6px;color:var(--muted);cursor:pointer;
+}
+.icon-btn:hover{background:var(--surface);color:var(--text)}
 .filter-presets{display:flex;gap:6px;flex-wrap:wrap;margin-top:2px}
 /* Search bar is always visible, with the view toggle vertically centred
    on the same row instead of wrapping onto its own line below. */
@@ -466,6 +475,8 @@ table.dt tr:hover td{background:var(--surface)}
         <div class="card filters-card">
           <div class="filters-toprow">
             <input class="field" type="text" id="beerSearch" placeholder="Search beer or brewery…">
+            <button type="button" class="icon-btn" id="beersExpandAllBtn" title="Expand all"><span class="material-symbols-rounded" style="font-size:16px">unfold_more</span></button>
+            <button type="button" class="icon-btn" id="beersCollapseAllBtn" title="Collapse all"><span class="material-symbols-rounded" style="font-size:16px">unfold_less</span></button>
             <div class="viewtoggle">
               <button class="active" data-view="table"><span class="material-symbols-rounded" style="font-size:15px">table_rows</span></button>
               <button data-view="gallery"><span class="material-symbols-rounded" style="font-size:15px">grid_view</span></button>
@@ -552,6 +563,8 @@ table.dt tr:hover td{background:var(--surface)}
         <div class="card filters-card">
           <div class="filters-toprow">
             <input class="field" type="text" id="brewerySearch" placeholder="Search breweries…">
+            <button type="button" class="icon-btn" id="breweriesExpandAllBtn" title="Expand all"><span class="material-symbols-rounded" style="font-size:16px">unfold_more</span></button>
+            <button type="button" class="icon-btn" id="breweriesCollapseAllBtn" title="Collapse all"><span class="material-symbols-rounded" style="font-size:16px">unfold_less</span></button>
           </div>
           <button class="filters-toggle" id="breweriesFiltersToggle" type="button">
             <span class="material-symbols-rounded" style="font-size:16px">tune</span>Filters
@@ -602,6 +615,8 @@ table.dt tr:hover td{background:var(--surface)}
         <div class="card filters-card">
           <div class="filters-toprow">
             <input class="field" type="text" id="styleSearch" placeholder="Search styles…">
+            <button type="button" class="icon-btn" id="stylesExpandAllBtn" title="Expand all"><span class="material-symbols-rounded" style="font-size:16px">unfold_more</span></button>
+            <button type="button" class="icon-btn" id="stylesCollapseAllBtn" title="Collapse all"><span class="material-symbols-rounded" style="font-size:16px">unfold_less</span></button>
           </div>
           <button class="filters-toggle" id="stylesFiltersToggle" type="button">
             <span class="material-symbols-rounded" style="font-size:16px">tune</span>Filters
@@ -1462,6 +1477,17 @@ function restoreBeerControls(){
   setBeerPageSize(saved.beerPageSize != null ? normalizeSavedPageSize(saved.beerPageSize) : 50);
   if (saved.view === 'gallery') setBeersView('gallery');
 }
+// Expand/collapse every currently-filtered beer's detail row at once,
+// instead of clicking each one — table view only (the gallery view opens
+// a modal per card rather than an inline toggle).
+$('#beersExpandAllBtn').addEventListener('click', () => {
+  filteredSortedBeers().forEach(b => expandedBeers.add(b.id));
+  renderBeersTable();
+});
+$('#beersCollapseAllBtn').addEventListener('click', () => {
+  expandedBeers.clear();
+  renderBeersTable();
+});
 
 // ---------------- breweries tab ----------------
 let breweriesSort = { field:'_avgRating', dir:'desc' };
@@ -1616,6 +1642,25 @@ $('#breweriesTableBody').addEventListener('click', (e) => {
   if (!row) return;
   const id = row.dataset.id;
   if (expandedBreweries.has(id)) expandedBreweries.delete(id); else expandedBreweries.add(id);
+  renderBreweriesTable();
+});
+// Expand/collapse every currently-filtered brewery's beer list at once —
+// opens the brewery -> beer list level only, not each beer's own nested
+// photo detail, so it doesn't turn into a wall of images.
+$('#breweriesExpandAllBtn').addEventListener('click', () => {
+  const q = $('#brewerySearch').value.trim().toLowerCase();
+  const minBeers = Number($('#breweryMinBeers').value);
+  const minRating = Number($('#breweryMinRating').value);
+  DATA.breweries.filter(b =>
+    (b._count||0) >= minBeers &&
+    (minRating === 0 || (b._avgRating != null && b._avgRating >= minRating)) &&
+    (!q || b.name.toLowerCase().includes(q))
+  ).forEach(b => expandedBreweries.add(b.id));
+  renderBreweriesTable();
+});
+$('#breweriesCollapseAllBtn').addEventListener('click', () => {
+  expandedBreweries.clear();
+  expandedBreweryBeers.clear();
   renderBreweriesTable();
 });
 
@@ -1788,6 +1833,33 @@ $('#stylesTableBody').addEventListener('click', (e) => {
   if (!familyRow) return;
   const family = familyRow.dataset.family;
   if (expandedStyleFamilies.has(family)) expandedStyleFamilies.delete(family); else expandedStyleFamilies.add(family);
+  renderStylesTable();
+});
+// Expand/collapse every currently-filtered family and its specific styles
+// at once — opens both the Family and Brew Tag levels so the whole
+// hierarchy is browsable, but leaves each beer's own nested photo detail
+// closed so it doesn't turn into a wall of images.
+$('#stylesExpandAllBtn').addEventListener('click', () => {
+  const groups = computeStyleGroups();
+  const q = $('#styleSearch').value.trim().toLowerCase();
+  const minBeers = Number($('#styleMinBeers').value);
+  const minRating = Number($('#styleMinRating').value);
+  for (const [family, stats] of Object.entries(groups)) {
+    let anyTagPassed = false;
+    for (const [tag, t] of Object.entries(stats.tags)) {
+      if (styleTagPasses(family, tag, t, q, minBeers, minRating)) {
+        expandedStyleTags.add(family + '::' + tag);
+        anyTagPassed = true;
+      }
+    }
+    if (anyTagPassed) expandedStyleFamilies.add(family);
+  }
+  renderStylesTable();
+});
+$('#stylesCollapseAllBtn').addEventListener('click', () => {
+  expandedStyleFamilies.clear();
+  expandedStyleTags.clear();
+  expandedStyleBeers.clear();
   renderStylesTable();
 });
 
