@@ -1298,6 +1298,10 @@ function shortDate(iso){
   if (!iso) return '—';
   return new Date(iso).toLocaleDateString(undefined, { day:'numeric', month:'short', year:'numeric' });
 }
+function monthYear(iso){
+  if (!iso) return '—';
+  return new Date(iso).toLocaleDateString(undefined, { month:'long', year:'numeric' });
+}
 
 // Brewery name link shared by the beer table's Brewery cell and the
 // "factory" line inside the detail body — jumps to the Breweries tab and
@@ -1326,7 +1330,7 @@ function beerDetailBodyHtml(b){
       <div class="beer-detail-row-line"><span class="material-symbols-rounded beer-detail-icon">category</span><span class="tagchip"><span class="tagdot" style="background:${familyColor(b.brewTagFamily)}"></span>${esc(b.brewTag||'—')}</span></div>
       <div class="beer-detail-row-line"><span class="material-symbols-rounded beer-detail-icon">percent</span>${fmtPct(b.abv)} ABV</div>
       ${ratingBarHtml(b)}
-      <div class="beer-detail-row-line"><span class="material-symbols-rounded beer-detail-icon">calendar_month</span>Logged ${shortDate(b.createdTime)}</div>
+      <div class="beer-detail-row-line"><span class="material-symbols-rounded beer-detail-icon">calendar_month</span>Logged ${monthYear(b.createdTime)}</div>
       ${b.brewTagDetail ? `<div class="beer-detail-row-line"><span class="material-symbols-rounded beer-detail-icon">sell</span>${esc(b.brewTagDetail)}</div>` : ''}
       ${b.beerLink ? `<div class="beer-detail-row-line"><span class="material-symbols-rounded beer-detail-icon">open_in_new</span><a href="${normalizeUrl(b.beerLink)}" target="_blank" rel="noopener" onclick="event.stopPropagation()">View post</a></div>` : ''}
     </div>
