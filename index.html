@@ -231,29 +231,37 @@ table.dt tr:hover td{background:var(--surface)}
 }
 
 /* ---- controls ---- */
-.filters-card{padding:10px 14px}
+.filters-card{padding:12px 14px}
+/* Shared look for the search input and every filter <select>, so they're
+   all exactly the same height/style regardless of native intrinsic
+   sizing — that inconsistency was the "weird sizes" problem. */
+.field{
+  border:1px solid var(--border);background:var(--card);padding:0 11px;font-size:12.5px;
+  border-radius:6px;outline:none;font-family:var(--font-family);height:36px;color:var(--text);width:100%;
+}
+.field:focus{border-color:var(--text)}
+/* Search bar is always visible, with the view toggle vertically centred
+   on the same row instead of wrapping onto its own line below. */
+.filters-toprow{display:flex;gap:8px;align-items:center}
+.filters-toprow .field{flex:1 1 auto;min-width:0}
+.viewtoggle{display:flex;gap:2px;flex:none;background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:2px}
+.viewtoggle button{border:none;background:none;padding:7px 12px;border-radius:4px;color:var(--muted);font-size:11.5px;font-weight:700}
+.viewtoggle button.active{background:var(--card);color:var(--text);box-shadow:var(--shadow)}
 .filters-toggle{
-  display:flex;align-items:center;gap:6px;width:100%;border:none;background:none;padding:4px 2px;
+  display:flex;align-items:center;gap:6px;width:100%;border:none;background:none;padding:8px 2px 2px;
   font-family:var(--font-family);font-size:12.5px;font-weight:700;color:var(--muted);cursor:pointer;
 }
 .filters-toggle:hover{color:var(--text)}
 .filters-chevron{margin-left:auto;font-size:18px;transition:transform .15s ease}
 .filters-toggle.collapsed .filters-chevron{transform:rotate(180deg)}
 .filters-toggle:not(.collapsed)+.controls{margin-top:8px}
+/* Filter selects drop into an even grid below the toggle — auto-fit with
+   a floor width means they wrap tidily on mobile and stretch to fill the
+   row evenly (not by content length) on desktop. */
 .controls{
-  display:flex;flex-wrap:wrap;gap:5px;align-items:center;
-  background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:5px;
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;
+  background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px;
 }
-.controls input[type=text],.controls select{
-  border:1px solid var(--border);background:var(--card);padding:7px 11px;font-size:12.5px;
-  border-radius:6px;outline:none;font-family:var(--font-family);height:34px;color:var(--text);
-}
-.controls input[type=text]{min-width:170px;flex:1 1 170px}
-.controls select{min-width:140px;flex:none}
-.controls input:focus,.controls select:focus{border-color:var(--text)}
-.viewtoggle{display:flex;gap:2px;background:var(--card);border:1px solid var(--border);border-radius:6px;padding:2px;margin-left:auto}
-.viewtoggle button{border:none;background:none;padding:6px 11px;border-radius:4px;color:var(--muted);font-size:11.5px;font-weight:700}
-.viewtoggle button.active{background:var(--surface);color:var(--text)}
 .pager{display:flex;align-items:center;gap:10px;font-size:11.5px;color:var(--muted);margin-top:10px}
 .pager button{border:1px solid var(--border);background:var(--card);border-radius:6px;padding:5px 12px;font-size:11px;font-weight:700;color:var(--text)}
 .pager button:disabled{opacity:.4;cursor:not-allowed}
@@ -397,16 +405,22 @@ table.dt tr:hover td{background:var(--surface)}
 
       <div class="view" id="view-beers">
         <div class="card filters-card">
+          <div class="filters-toprow">
+            <input class="field" type="text" id="beerSearch" placeholder="Search beer or brewery…">
+            <div class="viewtoggle">
+              <button class="active" data-view="table"><span class="material-symbols-rounded" style="font-size:15px">table_rows</span></button>
+              <button data-view="gallery"><span class="material-symbols-rounded" style="font-size:15px">grid_view</span></button>
+            </div>
+          </div>
           <button class="filters-toggle" id="beersFiltersToggle" type="button">
             <span class="material-symbols-rounded" style="font-size:16px">tune</span>Filters
             <span class="material-symbols-rounded filters-chevron">expand_less</span>
           </button>
           <div class="controls" id="beersControls">
-            <input type="text" id="beerSearch" placeholder="Search beer or brewery…">
-            <select id="beerBreweryFilter"><option value="">All breweries</option></select>
-            <select id="beerFamilyFilter"><option value="">All style families</option></select>
-            <select id="beerContentFilter"><option value="">All content statuses</option></select>
-            <select id="beerSort">
+            <select class="field" id="beerBreweryFilter"><option value="">All breweries</option></select>
+            <select class="field" id="beerFamilyFilter"><option value="">All style families</option></select>
+            <select class="field" id="beerContentFilter"><option value="">All content statuses</option></select>
+            <select class="field" id="beerSort">
               <option value="createdTime_desc">Logged: newest first</option>
               <option value="createdTime_asc">Logged: oldest first</option>
               <option value="rating_desc">Rating: high to low</option>
@@ -417,10 +431,6 @@ table.dt tr:hover td{background:var(--surface)}
               <option value="name_desc">Beer: Z to A</option>
               <option value="breweryName_asc">Brewery: A to Z</option>
             </select>
-            <div class="viewtoggle">
-              <button class="active" data-view="table"><span class="material-symbols-rounded" style="font-size:15px">table_rows</span></button>
-              <button data-view="gallery"><span class="material-symbols-rounded" style="font-size:15px">grid_view</span></button>
-            </div>
           </div>
         </div>
         <div class="card" id="beersTableCard">
@@ -453,13 +463,15 @@ table.dt tr:hover td{background:var(--surface)}
 
       <div class="view" id="view-breweries">
         <div class="card filters-card">
+          <div class="filters-toprow">
+            <input class="field" type="text" id="brewerySearch" placeholder="Search breweries…">
+          </div>
           <button class="filters-toggle" id="breweriesFiltersToggle" type="button">
             <span class="material-symbols-rounded" style="font-size:16px">tune</span>Filters
             <span class="material-symbols-rounded filters-chevron">expand_less</span>
           </button>
           <div class="controls" id="breweriesControls">
-            <input type="text" id="brewerySearch" placeholder="Search breweries…">
-            <select id="breweryMinBeers">
+            <select class="field" id="breweryMinBeers">
               <option value="0">Any beer count</option>
               <option value="3">3+ beers</option>
               <option value="5">5+ beers</option>
