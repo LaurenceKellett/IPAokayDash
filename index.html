@@ -667,7 +667,7 @@ table.dt tr:hover td{background:var(--surface)}
             <thead><tr>
               <th>Style<span class="sort-arrow"></span></th>
               <th>Beers<span class="sort-arrow"></span></th>
-              <th>Avg rating<span class="sort-arrow"></span></th>
+              <th data-field="_avgRating">Avg rating<span class="sort-arrow"></span></th>
             </tr></thead>
             <tbody id="stylesTableBody"></tbody>
           </table>
@@ -1704,6 +1704,11 @@ $('#breweriesCollapseAllBtn').addEventListener('click', () => applyBreweriesDept
 let expandedStyleFamilies = new Set();
 let expandedStyleTags = new Set();
 let expandedStyleBeers = new Set();
+// No sort field selected by default (families list by beer count, as
+// before) — clicking "Avg rating" switches to sorting by it, high to low
+// first (defaultDirs below), same toggle-on-reclick pattern as Breweries.
+let stylesSort = { field:null, dir:'desc' };
+const STYLES_DEFAULT_DIR = { _avgRating:'desc' };
 
 function computeStyleGroups(){
   const families = {};
@@ -1803,17 +1808,30 @@ function styleFamilyRowHtml(family, stats, q, minBeers, minRating){
 }
 
 function renderStylesTable(){
+  updateSortArrows($('#view-styles thead'), stylesSort);
   const groups = computeStyleGroups();
   const q = $('#styleSearch').value.trim().toLowerCase();
   const minBeers = Number($('#styleMinBeers').value);
   const minRating = Number($('#styleMinRating').value);
   const families = Object.entries(groups)
-    .filter(([family, stats]) => Object.entries(stats.tags).some(([tag, t]) => styleTagPasses(family, tag, t, q, minBeers, minRating)))
-    .sort((a,b) => b[1].count - a[1].count);
+    .filter(([family, stats]) => Object.entries(stats.tags).some(([tag, t]) => styleTagPasses(family, tag, t, q, minBeers, minRating)));
+  if (stylesSort.field === '_avgRating') {
+    const dir = stylesSort.dir;
+    families.sort((a,b) => {
+      let av = a[1].rated ? a[1].sum / a[1].rated : -Infinity;
+      let bv = b[1].rated ? b[1].sum / b[1].rated : -Infinity;
+      if (av < bv) return dir === 'asc' ? -1 : 1;
+      if (av > bv) return dir === 'asc' ? 1 : -1;
+      return 0;
+    });
+  } else {
+    families.sort((a,b) => b[1].count - a[1].count);
+  }
   $('#stylesTableBody').innerHTML = families.map(([family, stats]) => styleFamilyRowHtml(family, stats, q, minBeers, minRating)).join('') ||
     '<tr><td colspan="3" style="color:var(--muted)">No styles match these filters.</td></tr>';
   syncDetailPhotoHeights();
 }
+bindSortableHeaders($('#view-styles thead'), stylesSort, STYLES_DEFAULT_DIR, renderStylesTable);
 const STYLE_FILTER_IDS = ['styleSearch','styleMinBeers','styleMinRating'];
 STYLE_FILTER_IDS.forEach(id => {
   $('#'+id).addEventListener('input', () => {
