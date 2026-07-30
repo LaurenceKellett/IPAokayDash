@@ -172,8 +172,15 @@ table.dt tr:hover td{background:var(--surface)}
 .brewery-detail-meta a{color:var(--muted);font-weight:600}
 .brewery-detail-meta a:hover{color:var(--text)}
 .brewery-detail-divider{height:1px;background:var(--border);margin-bottom:8px}
-.brewery-detail-item{display:flex;align-items:center;gap:8px;font-size:12px;padding:6px 0;border-bottom:1px solid var(--border)}
-.brewery-detail-item:last-child{border-bottom:none}
+.brewery-detail-item{display:flex;align-items:center;gap:8px;font-size:12px;padding:6px 4px;border-bottom:1px solid var(--border);cursor:pointer;border-radius:6px}
+.brewery-detail-item:hover{background:var(--card)}
+.brewery-detail-item:has(+ .brewery-detail-beer-expanded){border-bottom-color:transparent}
+/* A toggle nested inside a toggle: indented so it reads as belonging to
+   the summary line above it, with its own card surface so it doesn't
+   blend into the brewery panel's background. */
+.brewery-detail-beer-expanded{margin:2px 0 10px 22px;border-bottom:1px solid var(--border);padding-bottom:10px}
+.brewery-detail-beer-expanded .beer-detail{background:var(--card);border:1px solid var(--border)}
+.brewery-detail-beer-expanded:last-child{border-bottom:none;padding-bottom:0}
 .beer-row{cursor:pointer}
 .beer-detail-row td{background:var(--surface);border-top:none;padding:8px 10px 14px}
 .beer-detail{position:relative;border-radius:10px;overflow:hidden;min-height:128px;background:var(--surface)}
@@ -1069,26 +1076,29 @@ function shortDate(iso){
   return new Date(iso).toLocaleDateString(undefined, { day:'numeric', month:'short', year:'numeric' });
 }
 
-function beerRowHtml(b){
+// Brewery name link shared by the beer table's Brewery cell and the
+// "factory" line inside the detail body — jumps to the Breweries tab and
+// expands that brewery so you can see its other beers.
+function breweryLinkHtml(brewery){
+  if (!brewery) return '—';
+  return `<a href="#" onclick="event.stopPropagation(); goToBrewery('${brewery.id}')">${esc(brewery.name)}</a>`;
+}
+
+// The full beer detail card — image + all the meta lines. Shared between
+// the Beers table's own expand toggle and the nested per-beer toggle
+// inside an expanded brewery's beer list, so both stay in sync.
+function beerDetailBodyHtml(b){
   const brewery = window.breweryById[(b.breweryIds||[])[0]];
-  const expanded = expandedBeers.has(b.id);
-  const chevron = expanded ? 'expand_less' : 'expand_more';
-  const mainRow = `<tr class="beer-row" data-id="${b.id}">
-    <td class="beer-name-cell"><span class="material-symbols-rounded" style="font-size:16px;flex:none;color:var(--muted)">${chevron}</span><span class="beer-name-text" title="${esc(b.name)}"><strong>${esc(b.name)}</strong></span></td>
-    <td class="beer-brewery-cell" title="${brewery ? esc(brewery.name) : ''}">${brewery ? esc(brewery.name) : '—'}</td>
-    <td style="text-align:right">${ratingBarSpan(b)}</td>
-  </tr>`;
-  if (!expanded) return mainRow;
   const img = `<div class="beer-detail-photo-wrap">${
     b.imageCached
       ? `<img class="beer-detail-photo" src="/img/${b.id}" loading="lazy" alt="">`
       : `<div class="beer-detail-photo-empty"><span class="material-symbols-rounded">local_bar</span></div>`
   }</div>`;
-  const detailRow = `<tr class="beer-detail-row" data-id="${b.id}"><td colspan="3"><div class="beer-detail">
+  return `<div class="beer-detail">
     ${img}
     <div class="beer-detail-meta">
       <div class="beer-detail-name">${esc(b.name)}</div>
-      <div class="beer-detail-row-line"><span class="material-symbols-rounded beer-detail-icon">factory</span>${brewery ? esc(brewery.name) : '—'}</div>
+      <div class="beer-detail-row-line"><span class="material-symbols-rounded beer-detail-icon">factory</span>${breweryLinkHtml(brewery)}</div>
       ${statusDetailLine(b)}
       <div class="beer-detail-row-line"><span class="material-symbols-rounded beer-detail-icon">category</span><span class="tagchip"><span class="tagdot" style="background:${familyColor(b.brewTagFamily)}"></span>${esc(b.brewTag||'—')}</span></div>
       <div class="beer-detail-row-line"><span class="material-symbols-rounded beer-detail-icon">percent</span>${fmtPct(b.abv)} ABV</div>
@@ -1097,7 +1107,20 @@ function beerRowHtml(b){
       ${b.brewTagDetail ? `<div class="beer-detail-row-line"><span class="material-symbols-rounded beer-detail-icon">sell</span>${esc(b.brewTagDetail)}</div>` : ''}
       ${b.beerLink ? `<div class="beer-detail-row-line"><span class="material-symbols-rounded beer-detail-icon">open_in_new</span><a href="${normalizeUrl(b.beerLink)}" target="_blank" rel="noopener" onclick="event.stopPropagation()">View post</a></div>` : ''}
     </div>
-  </div></td></tr>`;
+  </div>`;
+}
+
+function beerRowHtml(b){
+  const brewery = window.breweryById[(b.breweryIds||[])[0]];
+  const expanded = expandedBeers.has(b.id);
+  const chevron = expanded ? 'expand_less' : 'expand_more';
+  const mainRow = `<tr class="beer-row" data-id="${b.id}">
+    <td class="beer-name-cell"><span class="material-symbols-rounded" style="font-size:16px;flex:none;color:var(--muted)">${chevron}</span><span class="beer-name-text" title="${esc(b.name)}"><strong>${esc(b.name)}</strong></span></td>
+    <td class="beer-brewery-cell" title="${brewery ? esc(brewery.name) : ''}">${breweryLinkHtml(brewery)}</td>
+    <td style="text-align:right">${ratingBarSpan(b)}</td>
+  </tr>`;
+  if (!expanded) return mainRow;
+  const detailRow = `<tr class="beer-detail-row" data-id="${b.id}"><td colspan="3">${beerDetailBodyHtml(b)}</td></tr>`;
   return mainRow + detailRow;
 }
 
@@ -1117,10 +1140,12 @@ function renderBeersTable(){
 // text column next to it, since a CSS-only percentage/flex-stretch height
 // on the photo wasn't resolving reliably in every browser.
 function syncDetailPhotoHeights(){
-  document.querySelectorAll('.beer-detail-row').forEach(row => {
-    const container = row.querySelector('.beer-detail');
-    const wrap = row.querySelector('.beer-detail-photo-wrap');
-    if (container && wrap) wrap.style.height = container.offsetHeight + 'px';
+  // Targets every .beer-detail directly (not just ones inside the Beers
+  // table's own row wrapper) so nested details inside an expanded
+  // brewery's beer list get the same treatment.
+  document.querySelectorAll('.beer-detail').forEach(container => {
+    const wrap = container.querySelector('.beer-detail-photo-wrap');
+    if (wrap) wrap.style.height = container.offsetHeight + 'px';
   });
 }
 window.addEventListener('resize', () => {
@@ -1193,6 +1218,28 @@ function restoreBeerControls(){
 let breweriesSort = { field:'_avgRating', dir:'desc' };
 const BREWERIES_DEFAULT_DIR = { name:'asc', _count:'desc', _avgRating:'desc' };
 let expandedBreweries = new Set();
+// Which beers are expanded within an expanded brewery's own beer list —
+// a toggle nested inside a toggle, separate from the Beers page's own
+// expand state.
+let expandedBreweryBeers = new Set();
+
+// Cross-link from a beer's brewery name (Beers table cell, or the
+// "factory" line inside its detail) to the Breweries tab, expanded to
+// that brewery so its other beers are immediately visible.
+function goToBrewery(breweryId){
+  activateTab('breweries');
+  saveState({ tab: 'breweries' });
+  $('#brewerySearch').value = '';
+  $('#breweryMinBeers').value = '0';
+  saveState({ breweries: { brewerySearch: '', breweryMinBeers: '0' } });
+  expandedBreweries = new Set([breweryId]);
+  renderBreweriesTable();
+  closeSidebar();
+  requestAnimationFrame(() => {
+    const row = document.querySelector(`.brewery-row[data-id="${breweryId}"]`);
+    if (row) row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  });
+}
 
 function breweryRowHtml(b){
   const expanded = expandedBreweries.has(b.id);
@@ -1210,14 +1257,20 @@ function breweryRowHtml(b){
       ${b.website ? `<span><a href="${normalizeUrl(b.website)}" target="_blank" rel="noopener" onclick="event.stopPropagation()"><span class="material-symbols-rounded" style="font-size:14px;vertical-align:-2px">language</span>Website</a></span>` : ''}
     </div>
     <div class="brewery-detail-divider"></div>`;
-  const items = beers.map(beer => `
-    <div class="brewery-detail-item">
+  const items = beers.map(beer => {
+    const beerExpanded = expandedBreweryBeers.has(beer.id);
+    const chev = beerExpanded ? 'expand_less' : 'expand_more';
+    const summary = `<div class="brewery-detail-item" data-beer-id="${beer.id}">
+      <span class="material-symbols-rounded" style="font-size:15px;flex:none;color:var(--muted)">${chev}</span>
       <span class="tagdot" style="background:${familyColor(beer.brewTagFamily)}"></span>
       <strong>${esc(beer.name)}</strong>
       <span style="color:var(--muted)">${esc(beer.brewTag||'—')}</span>
       <span style="margin-left:auto;color:var(--muted)">${fmtPct(beer.abv)}</span>
       <span class="pill ${beer.rating>=80?'good':'amber'}" style="min-width:26px;text-align:center">${beer.rating ?? '—'}</span>
-    </div>`).join('') || '<div style="color:var(--muted);font-size:12px;padding:4px 0">No beers linked to this brewery.</div>';
+    </div>`;
+    const nested = beerExpanded ? `<div class="brewery-detail-beer-expanded">${beerDetailBodyHtml(beer)}</div>` : '';
+    return summary + nested;
+  }).join('') || '<div style="color:var(--muted);font-size:12px;padding:4px 0">No beers linked to this brewery.</div>';
   const detailRow = `<tr class="brewery-detail-row" data-id="${b.id}"><td colspan="3"><div class="brewery-detail">${meta}${items}</div></td></tr>`;
   return mainRow + detailRow;
 }
@@ -1237,6 +1290,7 @@ function renderBreweriesTable(){
     return 0;
   });
   $('#breweriesTableBody').innerHTML = rows.map(breweryRowHtml).join('') || '<tr><td colspan="3" style="color:var(--muted)">No breweries match these filters.</td></tr>';
+  syncDetailPhotoHeights();
 }
 bindSortableHeaders($('#view-breweries thead'), breweriesSort, BREWERIES_DEFAULT_DIR, renderBreweriesTable);
 const BREWERY_FILTER_IDS = ['brewerySearch','breweryMinBeers'];
@@ -1255,6 +1309,13 @@ function restoreBreweryControls(){
 }
 $('#breweriesTableBody').addEventListener('click', (e) => {
   if (e.target.closest('a')) return;
+  const item = e.target.closest('.brewery-detail-item');
+  if (item) {
+    const beerId = item.dataset.beerId;
+    if (expandedBreweryBeers.has(beerId)) expandedBreweryBeers.delete(beerId); else expandedBreweryBeers.add(beerId);
+    renderBreweriesTable();
+    return;
+  }
   const row = e.target.closest('.brewery-row');
   if (!row) return;
   const id = row.dataset.id;
