@@ -102,6 +102,21 @@ a:hover{text-decoration:underline}
 }
 .beer-modal-close:hover{background:#fff}
 .beer-modal .beer-detail{min-height:280px}
+.chart-wrap-clickable{cursor:pointer}
+.chart-modal{max-width:640px}
+.chart-modal-axis-controls{display:flex;flex-wrap:wrap;gap:10px;align-items:end;padding:12px 18px 0}
+.chart-modal-axis-controls label{display:flex;flex-direction:column;gap:3px;font-size:10.5px;font-weight:700;color:var(--muted)}
+.chart-modal-axis-controls input{
+  width:82px;border:1px solid var(--border);background:var(--surface);padding:6px 8px;font-size:12.5px;
+  border-radius:6px;outline:none;font-family:var(--font-family);color:var(--text);
+}
+.chart-modal-axis-controls input:focus{border-color:var(--text)}
+.chart-modal-axis-controls button{
+  border:1px solid var(--border);background:var(--card);border-radius:6px;padding:7px 12px;
+  font-size:11.5px;font-weight:700;color:var(--text);cursor:pointer;height:32px;
+}
+.chart-modal-axis-controls button:hover{background:var(--surface)}
+.chart-modal-canvas-wrap{height:340px;padding:14px 18px 18px}
 .sync-dot{width:8px;height:8px;border-radius:50%;background:var(--warning);flex:none}
 .sync-dot.ok{background:var(--good)}
 .sync-dot.loading{animation:pulse 1s ease-in-out infinite}
@@ -393,13 +408,13 @@ table.dt tr:hover td{background:var(--surface)}
         <div class="row">
           <div class="card">
             <h3><span class="material-symbols-rounded">bar_chart</span>Rating distribution</h3>
-            <p class="cap">Count of rated beers per 10-point band</p>
-            <div class="chart-wrap"><canvas id="chartHistogram"></canvas></div>
+            <p class="cap">Count of rated beers per 10-point band — click to zoom</p>
+            <div class="chart-wrap chart-wrap-clickable"><canvas id="chartHistogram"></canvas></div>
           </div>
           <div class="card">
             <h3><span class="material-symbols-rounded">scatter_plot</span>ABV vs rating</h3>
-            <p class="cap">Coloured by style family — <span id="correlationLabel"></span></p>
-            <div class="chart-wrap"><canvas id="chartScatter"></canvas></div>
+            <p class="cap">Coloured by style family — <span id="correlationLabel"></span> — click to zoom</p>
+            <div class="chart-wrap chart-wrap-clickable"><canvas id="chartScatter"></canvas></div>
           </div>
         </div>
         <div class="row">
@@ -571,6 +586,15 @@ table.dt tr:hover td{background:var(--surface)}
   <div class="beer-modal" role="dialog" aria-modal="true">
     <button class="beer-modal-close" id="beerModalClose" aria-label="Close" type="button"><span class="material-symbols-rounded">close</span></button>
     <div id="beerModalBody"></div>
+  </div>
+</div>
+
+<div class="beer-modal-backdrop" id="chartModalBackdrop">
+  <div class="beer-modal chart-modal" role="dialog" aria-modal="true">
+    <button class="beer-modal-close" id="chartModalClose" aria-label="Close" type="button"><span class="material-symbols-rounded">close</span></button>
+    <h3 id="chartModalTitle" style="padding:18px 44px 0 18px;margin:0"></h3>
+    <div class="chart-modal-axis-controls" id="chartModalAxisControls"></div>
+    <div class="chart-wrap chart-modal-canvas-wrap"><canvas id="chartModalCanvas"></canvas></div>
   </div>
 </div>
 
@@ -1540,11 +1564,87 @@ function renderBreweryConsistency(){
 }
 
 // ---------------- chart helper ----------------
+// Every chart's last-drawn {type, data, options} is kept here so the
+// zoom modal can redraw a bigger copy of whichever chart was clicked,
+// with axis min/max overrides layered on top.
+let chartConfigs = {};
 function drawChart(id, type, data, options){
   const ctx = document.getElementById(id);
   if (charts[id]) charts[id].destroy();
-  charts[id] = new Chart(ctx, { type, data, options: { responsive:true, maintainAspectRatio:false, ...options } });
+  const merged = { responsive:true, maintainAspectRatio:false, ...options };
+  charts[id] = new Chart(ctx, { type, data, options: merged });
+  chartConfigs[id] = { type, data, options: merged };
 }
+
+// ---------------- chart zoom modal ----------------
+const CHART_MODAL_TITLES = { chartHistogram: 'Rating distribution', chartScatter: 'ABV vs rating' };
+let chartModalInstance = null;
+let chartModalId = null;
+
+function openChartModal(id){
+  const cfg = chartConfigs[id];
+  if (!cfg) return;
+  chartModalId = id;
+  $('#chartModalTitle').textContent = CHART_MODAL_TITLES[id] || '';
+  renderChartModalAxisControls(cfg);
+  drawChartModalCanvas(cfg, {});
+  $('#chartModalBackdrop').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+function closeChartModal(){
+  $('#chartModalBackdrop').classList.remove('open');
+  document.body.style.overflow = '';
+  if (chartModalInstance) { chartModalInstance.destroy(); chartModalInstance = null; }
+}
+function renderChartModalAxisControls(cfg){
+  // Only a linear axis has a min/max worth dialling in — a bar chart's
+  // x-axis is categorical (rating bands), so only its y (count) gets a
+  // control; a scatter plot gets both.
+  const fields = cfg.type === 'scatter'
+    ? [['chartXMin','X min'],['chartXMax','X max'],['chartYMin','Y min'],['chartYMax','Y max']]
+    : [['chartYMax','Y max']];
+  $('#chartModalAxisControls').innerHTML =
+    fields.map(([id, label]) => `<label>${label}<input type="number" id="${id}" placeholder="Auto"></label>`).join('') +
+    `<button type="button" id="chartResetZoom">Reset zoom</button>`;
+  fields.forEach(([id]) => document.getElementById(id).addEventListener('input', applyChartModalZoom));
+  $('#chartResetZoom').addEventListener('click', () => {
+    fields.forEach(([id]) => { document.getElementById(id).value = ''; });
+    applyChartModalZoom();
+  });
+}
+function applyChartModalZoom(){
+  const cfg = chartConfigs[chartModalId];
+  if (!cfg) return;
+  const val = (id) => {
+    const el = document.getElementById(id);
+    return el && el.value !== '' ? Number(el.value) : null;
+  };
+  drawChartModalCanvas(cfg, { xMin: val('chartXMin'), xMax: val('chartXMax'), yMin: val('chartYMin'), yMax: val('chartYMax') });
+}
+function drawChartModalCanvas(cfg, overrides){
+  if (chartModalInstance) chartModalInstance.destroy();
+  const options = JSON.parse(JSON.stringify(cfg.options));
+  options.scales = options.scales || {};
+  options.scales.x = { ...options.scales.x };
+  options.scales.y = { ...options.scales.y };
+  if (overrides.xMin != null) options.scales.x.min = overrides.xMin; else delete options.scales.x.min;
+  if (overrides.xMax != null) options.scales.x.max = overrides.xMax; else delete options.scales.x.max;
+  if (overrides.yMin != null) options.scales.y.min = overrides.yMin; else delete options.scales.y.min;
+  if (overrides.yMax != null) options.scales.y.max = overrides.yMax; else delete options.scales.y.max;
+  const ctx = document.getElementById('chartModalCanvas');
+  chartModalInstance = new Chart(ctx, { type: cfg.type, data: JSON.parse(JSON.stringify(cfg.data)), options });
+}
+['chartHistogram','chartScatter'].forEach(id => {
+  document.getElementById(id).addEventListener('click', () => openChartModal(id));
+});
+$('#chartModalBackdrop').addEventListener('click', (e) => {
+  if (e.target === e.currentTarget) closeChartModal();
+});
+$('#chartModalClose').addEventListener('click', closeChartModal);
+window.addEventListener('keydown', (e) => {
+  if (e.key !== 'Escape') return;
+  closeChartModal();
+});
 
 loadData();
 </script>
