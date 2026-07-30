@@ -449,6 +449,13 @@ table.dt tr:hover td{background:var(--surface)}
               <option value="name_desc">Beer: Z to A</option>
               <option value="breweryName_asc">Brewery: A to Z</option>
             </select>
+            <select class="field" id="beerPageSize">
+              <option value="10">10 per page</option>
+              <option value="20">20 per page</option>
+              <option value="50" selected>50 per page</option>
+              <option value="100">100 per page</option>
+              <option value="200">200 per page</option>
+            </select>
           </div>
         </div>
         <div class="card" id="beersTableCard">
@@ -1022,7 +1029,8 @@ function updateSortArrows(theadEl, sortState){
 
 // ---------------- beers tab ----------------
 let beersPage = 0, beersGalPage = 0;
-const PAGE_SIZE = 50, GAL_SIZE = 30;
+// One user-selectable page size drives both the table and gallery views.
+function currentPageSize(){ return Number($('#beerPageSize').value) || 50; }
 let expandedBeers = new Set();
 
 function populateBeerFilters(){
@@ -1140,9 +1148,10 @@ function beerRowHtml(b){
 
 function renderBeersTable(){
   const rows = filteredSortedBeers();
-  const totalPages = Math.max(1, Math.ceil(rows.length / PAGE_SIZE));
+  const pageSize = currentPageSize();
+  const totalPages = Math.max(1, Math.ceil(rows.length / pageSize));
   beersPage = Math.min(beersPage, totalPages - 1);
-  const page = rows.slice(beersPage*PAGE_SIZE, beersPage*PAGE_SIZE + PAGE_SIZE);
+  const page = rows.slice(beersPage*pageSize, beersPage*pageSize + pageSize);
   $('#beersTableBody').innerHTML = page.map(beerRowHtml).join('') || '<tr><td colspan="3" style="color:var(--muted)">No beers match these filters.</td></tr>';
   $('#beersPageLabel').textContent = `Page ${beersPage+1} of ${totalPages} (${rows.length} beers)`;
   $('#beersPrev').disabled = beersPage === 0;
@@ -1169,9 +1178,10 @@ window.addEventListener('resize', () => {
 
 function renderBeersGallery(){
   const rows = filteredSortedBeers();
-  const totalPages = Math.max(1, Math.ceil(rows.length / GAL_SIZE));
+  const pageSize = currentPageSize();
+  const totalPages = Math.max(1, Math.ceil(rows.length / pageSize));
   beersGalPage = Math.min(beersGalPage, totalPages - 1);
-  const page = rows.slice(beersGalPage*GAL_SIZE, beersGalPage*GAL_SIZE + GAL_SIZE);
+  const page = rows.slice(beersGalPage*pageSize, beersGalPage*pageSize + pageSize);
   $('#beersGallery').innerHTML = page.map(beerCardHtml).join('') || '<div style="color:var(--muted);font-size:12px">No beers match these filters.</div>';
   $('#beersGalPageLabel').textContent = `Page ${beersGalPage+1} of ${totalPages} (${rows.length} beers)`;
   $('#beersGalPrev').disabled = beersGalPage === 0;
@@ -1217,7 +1227,7 @@ $('#beersTableBody').addEventListener('click', (e) => {
   renderBeersTable();
 });
 
-const BEER_FILTER_IDS = ['beerSearch','beerBreweryFilter','beerFamilyFilter','beerContentFilter','beerSort'];
+const BEER_FILTER_IDS = ['beerSearch','beerBreweryFilter','beerFamilyFilter','beerContentFilter','beerSort','beerPageSize'];
 BEER_FILTER_IDS.forEach(id => {
   $('#'+id).addEventListener('input', () => {
     beersPage = 0; beersGalPage = 0;
