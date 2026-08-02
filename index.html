@@ -592,6 +592,13 @@ table.dt tr:hover td{background:var(--surface)}
               <select class="field" id="beerContentFilter"><option value="">All content statuses</option></select>
             </div>
             <div class="filter-field">
+              <div class="filter-field-label"><span class="material-symbols-rounded">star</span>Rating range<span class="slider-field-value" id="beerRatingRangeLabel">Any</span></div>
+              <div style="display:flex;gap:6px;align-items:center">
+                <input type="range" id="beerMinRating" min="0" max="100" step="1" value="0" style="flex:1">
+                <input type="range" id="beerMaxRating" min="0" max="100" step="1" value="100" style="flex:1">
+              </div>
+            </div>
+            <div class="filter-field">
               <div class="filter-field-label"><span class="material-symbols-rounded">swap_vert</span>Sort by</div>
               <select class="field" id="beerSort">
                 <option value="createdTime_desc">Logged: newest first</option>
@@ -1132,10 +1139,13 @@ function renderHistogram(){
     if (idx < 0) idx = 0;
     bins[idx]++;
   }
-  const labels = bins.map((_,i) => `${i*10}-${i*10+9}`);
+  // The last band is 90-100 inclusive (not 90-99 — a rating of exactly
+  // 100 still lands in bin 9 above), so its label and click-through range
+  // need to say 100, not 99.
+  const labels = bins.map((_,i) => i === 9 ? '90-100' : `${i*10}-${i*10+9}`);
   const peak = bins.indexOf(Math.max(...bins));
   $('#histCap').textContent = bins.some(v=>v>0)
-    ? `Count of rated beers per 10-point band. Most cluster in the ${labels[peak]} range (${bins[peak]} beers).`
+    ? `Count of rated beers per 10-point band. Most cluster in the ${labels[peak]} range (${bins[peak]} beers). Click a bar to see those beers.`
     : 'Count of rated beers per 10-point band. No ratings logged yet.';
   drawChart('chartHistogram', 'bar', {
     labels,
@@ -1143,7 +1153,13 @@ function renderHistogram(){
   }, {
     layout:{ padding:{ top:18 } },
     plugins:{ legend:{display:false}, barValueLabels:{ enabled:true, color:'#6b6255' } },
-    scales:{ y:{ beginAtZero:true, grid:{color:'#ece9e2'} }, x:{ grid:{display:false} } }
+    scales:{ y:{ beginAtZero:true, grid:{color:'#ece9e2'} }, x:{ grid:{display:false} } },
+    onClick:(evt, elements) => {
+      if (!elements.length) return;
+      const idx = elements[0].index;
+      goToBeersWithRating(idx*10, idx === 9 ? 100 : idx*10+9);
+    },
+    onHover:(evt, elements) => { evt.native.target.style.cursor = elements.length ? 'pointer' : 'default'; }
   });
 }
 
@@ -1470,11 +1486,15 @@ function filteredSortedBeers(){
   const familyFilter = $('#beerFamilyFilter').value;
   const contentFilter = $('#beerContentFilter').value;
   const photographFilter = $('#beerPhotographFilter').value;
+  const minRating = Number($('#beerMinRating').value);
+  const maxRating = Number($('#beerMaxRating').value);
+  const ratingFilterActive = minRating > 0 || maxRating < 100;
   let rows = DATA.beers.filter(b => {
     if (breweryFilter && !(b.breweryIds||[]).includes(breweryFilter)) return false;
     if (familyFilter && b.brewTagFamily !== familyFilter) return false;
     if (contentFilter && contentStatusText(b) !== contentFilter) return false;
     if (photographFilter && photographStatusText(b) !== photographFilter) return false;
+    if (ratingFilterActive && (b.rating == null || b.rating < minRating || b.rating > maxRating)) return false;
     if (q) {
       const brewery = window.breweryById[(b.breweryIds||[])[0]];
       const hay = (b.name + ' ' + (brewery ? brewery.name : '')).toLowerCase();
@@ -1631,11 +1651,30 @@ $('#beersTableBody').addEventListener('click', (e) => {
   renderBeersTable();
 });
 
-const BEER_FILTER_IDS = ['beerSearch','beerBreweryFilter','beerFamilyFilter','beerPhotographFilter','beerContentFilter','beerSort'];
+const BEER_FILTER_IDS = ['beerSearch','beerBreweryFilter','beerFamilyFilter','beerPhotographFilter','beerContentFilter','beerMinRating','beerMaxRating','beerSort'];
 BEER_FILTER_IDS.forEach(id => {
   $('#'+id).addEventListener('input', () => {
     beersPage = 0; beersGalPage = 0;
     saveState({ beers: { ...loadState().beers, [id]: $('#'+id).value } });
+    renderBeersTable(); renderBeersGallery();
+  });
+});
+function updateBeerRatingRangeLabel(){
+  const min = Number($('#beerMinRating').value);
+  const max = Number($('#beerMaxRating').value);
+  $('#beerRatingRangeLabel').textContent = (min === 0 && max === 100) ? 'Any' : `${min}-${max}`;
+}
+// Dual-thumb range: keep the two sliders from crossing over, and re-save
+// the corrected value (these run after the generic listeners above, which
+// already saved/rendered with the raw, possibly-crossed value).
+['beerMinRating','beerMaxRating'].forEach(id => {
+  $('#'+id).addEventListener('input', () => {
+    if (Number($('#beerMinRating').value) > Number($('#beerMaxRating').value)) {
+      if (id === 'beerMinRating') $('#beerMaxRating').value = $('#beerMinRating').value;
+      else $('#beerMinRating').value = $('#beerMaxRating').value;
+    }
+    updateBeerRatingRangeLabel();
+    saveState({ beers: { ...loadState().beers, beerMinRating: $('#beerMinRating').value, beerMaxRating: $('#beerMaxRating').value } });
     renderBeersTable(); renderBeersGallery();
   });
 });
@@ -1653,6 +1692,9 @@ $('#beerFiltersReset').addEventListener('click', () => {
   $('#beerFamilyFilter').value = '';
   $('#beerPhotographFilter').value = '';
   $('#beerContentFilter').value = '';
+  $('#beerMinRating').value = '0';
+  $('#beerMaxRating').value = '100';
+  updateBeerRatingRangeLabel();
   $('#beerSort').value = 'createdTime_desc';
   setBeerPageSize(50);
   beersPage = 0; beersGalPage = 0;
@@ -1689,6 +1731,7 @@ function restoreBeerControls(){
     const isSelect = el.tagName === 'SELECT';
     if (!isSelect || el.querySelector(`option[value="${CSS.escape(saved[id])}"]`)) el.value = saved[id];
   });
+  updateBeerRatingRangeLabel();
   setBeerPageSize(saved.beerPageSize != null ? normalizeSavedPageSize(saved.beerPageSize) : 50);
   if (saved.view === 'gallery') setBeersView('gallery');
 }
@@ -1717,6 +1760,32 @@ let expandedBreweries = new Set();
 // a toggle nested inside a toggle, separate from the Beers page's own
 // expand state.
 let expandedBreweryBeers = new Set();
+
+// Cross-link from clicking a Rating distribution bar on Overview to the
+// Beers tab, pre-filtered to that rating band — e.g. clicking the "70-79"
+// bar shows exactly those beers. Opens the filters panel too, so the
+// applied range is visible (and adjustable) rather than a silent filter.
+function goToBeersWithRating(min, max){
+  activateTab('beers');
+  $('#beerSearch').value = '';
+  $('#beerBreweryFilter').value = '';
+  $('#beerFamilyFilter').value = '';
+  $('#beerPhotographFilter').value = '';
+  $('#beerContentFilter').value = '';
+  $('#beerMinRating').value = String(min);
+  $('#beerMaxRating').value = String(max);
+  updateBeerRatingRangeLabel();
+  beersPage = 0; beersGalPage = 0;
+  saveState({ tab: 'beers', beers: { ...loadState().beers, beerSearch:'', beerBreweryFilter:'', beerFamilyFilter:'', beerPhotographFilter:'', beerContentFilter:'', beerMinRating: String(min), beerMaxRating: String(max) } });
+  $('#beersControls').style.display = '';
+  $('#beersFiltersToggle').classList.remove('collapsed');
+  const fc = loadState().filtersCollapsed || {};
+  fc.beers = false;
+  saveState({ filtersCollapsed: fc });
+  closeChartModal();
+  renderBeersTable(); renderBeersGallery();
+  closeSidebar();
+}
 
 // Cross-link from a beer's brewery name (Beers table cell, or the
 // "factory" line inside its detail) to the Breweries tab, expanded to
