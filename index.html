@@ -1180,8 +1180,9 @@ function renderAbvHistogram(){
 // month difference rather than exact days, since "roughly how many months
 // does this sit in the backlog" is the useful question here.
 const POSTING_LAG_BUCKETS = [
-  [3, '1-3 months'], [6, '3-6 months'], [12, '6-12 months'],
-  [24, '12-24 months'], [Infinity, '2+ years'],
+  [6, '1-6 months'], [12, '6-12 months'], [18, '12-18 months'], [24, '18-24 months'],
+  [30, '24-30 months'], [36, '30-36 months'], [42, '36-42 months'], [48, '42-48 months'],
+  [Infinity, '4+ years'],
 ];
 function renderPostingLag(){
   const bins = new Array(POSTING_LAG_BUCKETS.length).fill(0);
