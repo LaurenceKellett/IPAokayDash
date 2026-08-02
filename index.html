@@ -103,8 +103,16 @@ a:hover{text-decoration:underline}
 }
 .beer-modal-close:hover{background:#fff}
 .beer-modal .beer-detail{min-height:280px}
-.chart-wrap-clickable{cursor:pointer}
 .chart-modal{max-width:640px}
+/* Small "Expand" toggle in a chart card's header, pushed to the right of
+   the title by the header's own flex layout — replaces clicking the chart
+   itself, which was too easy to trigger by accident while just reading. */
+.chart-expand-btn{
+  margin-left:auto;display:inline-flex;align-items:center;gap:3px;border:1px solid var(--border);background:var(--card);
+  border-radius:6px;padding:3px 8px;font-size:10.5px;font-weight:700;color:var(--muted);cursor:pointer;font-family:var(--font-family);flex:none;
+}
+.chart-expand-btn:hover{background:var(--surface);color:var(--text)}
+.chart-expand-btn .material-symbols-rounded{font-size:13px}
 .chart-modal-axis-controls{display:flex;flex-wrap:wrap;gap:10px;align-items:end;padding:12px 18px 0}
 .chart-modal-axis-controls label{display:flex;flex-direction:column;gap:3px;font-size:10.5px;font-weight:700;color:var(--muted)}
 .chart-modal-axis-controls input{
@@ -167,12 +175,6 @@ a:hover{text-decoration:underline}
 
 /* ---- gallery ---- */
 .gallery{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:11px}
-/* Best & worst spotlight — only ever 1-2 cards, so cap the column width
-   instead of letting the shared .gallery grid stretch them full-width. */
-.bw-gallery{grid-template-columns:repeat(auto-fill,minmax(160px,220px))}
-.bw-item{display:flex;flex-direction:column;gap:6px}
-.bw-label{font-size:10.5px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.3px;display:flex;align-items:center;gap:4px}
-.bw-label .material-symbols-rounded{font-size:13px}
 .gcard{background:var(--card);border:1px solid var(--border);border-radius:7px;overflow:hidden;box-shadow:var(--shadow);border-top:3px solid var(--border-strong);cursor:pointer}
 .gimg{aspect-ratio:1;background:var(--placeholder-bg);display:flex;align-items:center;justify-content:center;font-size:24px;overflow:hidden}
 .gimg img{width:100%;height:100%;object-fit:cover}
@@ -456,42 +458,37 @@ table.dt tr:hover td{background:var(--surface)}
         <div class="kpis" id="kpis"></div>
         <div class="row">
           <div class="card">
-            <h3><span class="material-symbols-rounded">bar_chart</span>Rating distribution</h3>
-            <p class="cap">Count of rated beers per 10-point band — click to zoom</p>
-            <div class="chart-wrap chart-wrap-clickable"><canvas id="chartHistogram"></canvas></div>
+            <h3><span class="material-symbols-rounded">bar_chart</span>Rating distribution<button type="button" class="chart-expand-btn" data-chart="chartHistogram"><span class="material-symbols-rounded">open_in_full</span>Expand</button></h3>
+            <p class="cap" id="histCap">Count of rated beers per 10-point band.</p>
+            <div class="chart-wrap"><canvas id="chartHistogram"></canvas></div>
           </div>
           <div class="card">
-            <h3><span class="material-symbols-rounded">scatter_plot</span>ABV vs rating</h3>
-            <p class="cap">Coloured by style family — <span id="correlationLabel"></span> — click to zoom</p>
-            <div class="chart-wrap chart-wrap-clickable"><canvas id="chartScatter"></canvas></div>
+            <h3><span class="material-symbols-rounded">scatter_plot</span>ABV vs rating<button type="button" class="chart-expand-btn" data-chart="chartScatter"><span class="material-symbols-rounded">open_in_full</span>Expand</button></h3>
+            <p class="cap" id="scatterCap">Each dot is one beer, coloured by style family — up and to the right means stronger beers rating higher too.</p>
+            <div class="chart-wrap"><canvas id="chartScatter"></canvas></div>
           </div>
         </div>
         <div class="row">
           <div class="card">
-            <h3><span class="material-symbols-rounded">equalizer</span>ABV distribution</h3>
-            <p class="cap">Count of beers per 2-point ABV band — click to zoom</p>
-            <div class="chart-wrap chart-wrap-clickable"><canvas id="chartAbvHistogram"></canvas></div>
+            <h3><span class="material-symbols-rounded">equalizer</span>ABV distribution<button type="button" class="chart-expand-btn" data-chart="chartAbvHistogram"><span class="material-symbols-rounded">open_in_full</span>Expand</button></h3>
+            <p class="cap" id="abvHistCap">Count of beers per 2-point ABV band.</p>
+            <div class="chart-wrap"><canvas id="chartAbvHistogram"></canvas></div>
           </div>
           <div class="card">
-            <h3><span class="material-symbols-rounded">hourglass_top</span>Posting lag</h3>
-            <p class="cap" id="postingLagCap">Days between logging a beer and posting it — click to zoom</p>
-            <div class="chart-wrap chart-wrap-clickable"><canvas id="chartPostingLag"></canvas></div>
+            <h3><span class="material-symbols-rounded">hourglass_top</span>Posting lag<button type="button" class="chart-expand-btn" data-chart="chartPostingLag"><span class="material-symbols-rounded">open_in_full</span>Expand</button></h3>
+            <p class="cap" id="postingLagCap">How many months pass between logging a beer and posting about it.</p>
+            <div class="chart-wrap"><canvas id="chartPostingLag"></canvas></div>
           </div>
-        </div>
-        <div class="card">
-          <h3><span class="material-symbols-rounded">military_tech</span>Best &amp; worst</h3>
-          <p class="cap">Highest and lowest rated beers you've logged</p>
-          <div class="gallery bw-gallery" id="bestWorstGallery"></div>
         </div>
         <div class="row">
           <div class="card">
             <h3><span class="material-symbols-rounded">category</span>Top style families</h3>
-            <p class="cap">By volume, with average rating</p>
+            <p class="cap" id="familyListCap">Ranked by average rating (families with at least one rated beer).</p>
             <div class="taglist" id="familyList"></div>
           </div>
           <div class="card">
             <h3><span class="material-symbols-rounded">military_tech</span>Brewery leaderboard</h3>
-            <p class="cap">Top by average rating (min. 3 beers logged)</p>
+            <p class="cap" id="leaderboardCap">Top 10 by average rating (min. 3 beers logged).</p>
             <div class="table-scroll"><table class="dt"><thead><tr><th></th><th>Brewery</th><th>Beers</th><th>Avg</th></tr></thead><tbody id="leaderboardBody"></tbody></table></div>
           </div>
         </div>
@@ -514,37 +511,37 @@ table.dt tr:hover td{background:var(--surface)}
         </div>
         <div class="row">
           <div class="card">
-            <h3><span class="material-symbols-rounded">calendar_month</span>Beers logged per month</h3>
-            <p class="cap">By Created time</p>
+            <h3><span class="material-symbols-rounded">calendar_month</span>Beers logged per month<button type="button" class="chart-expand-btn" data-chart="chartMonthly"><span class="material-symbols-rounded">open_in_full</span>Expand</button></h3>
+            <p class="cap" id="monthlyCap">How many beers you logged each calendar month, by Created time.</p>
             <div class="chart-wrap"><canvas id="chartMonthly"></canvas></div>
           </div>
           <div class="card">
-            <h3><span class="material-symbols-rounded">show_chart</span>Average rating over time</h3>
-            <p class="cap">Palate drift check — pickier or more generous lately?</p>
+            <h3><span class="material-symbols-rounded">show_chart</span>Average rating over time<button type="button" class="chart-expand-btn" data-chart="chartMonthlyRating"><span class="material-symbols-rounded">open_in_full</span>Expand</button></h3>
+            <p class="cap" id="monthlyRatingCap">Average rating of beers logged each month — a palate-drift check for whether you're getting pickier or more generous.</p>
             <div class="chart-wrap"><canvas id="chartMonthlyRating"></canvas></div>
           </div>
         </div>
         <div class="row">
           <div class="card">
-            <h3><span class="material-symbols-rounded">stacked_line_chart</span>Style trends over time</h3>
-            <p class="cap">Monthly volume of your top 4 style families</p>
+            <h3><span class="material-symbols-rounded">stacked_line_chart</span>Style trends over time<button type="button" class="chart-expand-btn" data-chart="chartFamilyTrends"><span class="material-symbols-rounded">open_in_full</span>Expand</button></h3>
+            <p class="cap" id="familyTrendsCap">Monthly volume of your top 4 style families. The y-axis is capped at 20/month for readability — hover a bar that looks flat-topped to see its real count.</p>
             <div class="chart-wrap"><canvas id="chartFamilyTrends"></canvas></div>
           </div>
           <div class="card">
-            <h3><span class="material-symbols-rounded">explore</span>Discovery vs. loyalty</h3>
-            <p class="cap">Cumulative beers logged vs. unique breweries tried</p>
+            <h3><span class="material-symbols-rounded">explore</span>Discovery vs. loyalty<button type="button" class="chart-expand-btn" data-chart="chartDiscovery"><span class="material-symbols-rounded">open_in_full</span>Expand</button></h3>
+            <p class="cap" id="discoveryCap">Cumulative beers logged (left axis) against unique breweries tried (right axis) — lines converging means you're mostly discovering new breweries, a widening gap means you're revisiting the same ones.</p>
             <div class="chart-wrap"><canvas id="chartDiscovery"></canvas></div>
           </div>
         </div>
         <div class="row">
           <div class="card">
             <h3><span class="material-symbols-rounded">grid_view</span>The sweet spot</h3>
-            <p class="cap">Where ABV and rating cluster — darker = more beers</p>
+            <p class="cap" id="sweetSpotCap">Where ABV and rating cluster — darker cells (with a count) mean more beers fall there.</p>
             <div class="heatmap-scroll"><div id="sweetSpotGrid"></div></div>
           </div>
           <div class="card">
-            <h3><span class="material-symbols-rounded">balance</span>Brewery consistency</h3>
-            <p class="cap">Avg rating vs. spread (min. 3 rated beers) — bottom-right is reliably great, top is hit-or-miss</p>
+            <h3><span class="material-symbols-rounded">balance</span>Brewery consistency<button type="button" class="chart-expand-btn" data-chart="chartConsistency"><span class="material-symbols-rounded">open_in_full</span>Expand</button></h3>
+            <p class="cap" id="consistencyCap">Avg rating (x) vs. spread between highest and lowest rated beer (y), min. 3 rated beers per brewery — bottom-right is reliably great, top is hit-or-miss.</p>
             <div class="chart-wrap"><canvas id="chartConsistency"></canvas></div>
           </div>
         </div>
@@ -994,7 +991,6 @@ function renderAll(){
   renderScatter();
   renderAbvHistogram();
   renderPostingLag();
-  renderBestWorst();
   renderFamilyList();
   renderLeaderboard();
   renderRecentGallery();
@@ -1111,10 +1107,18 @@ function renderHistogram(){
     bins[idx]++;
   }
   const labels = bins.map((_,i) => `${i*10}-${i*10+9}`);
+  const peak = bins.indexOf(Math.max(...bins));
+  $('#histCap').textContent = bins.some(v=>v>0)
+    ? `Count of rated beers per 10-point band. Most cluster in the ${labels[peak]} range (${bins[peak]} beers).`
+    : 'Count of rated beers per 10-point band. No ratings logged yet.';
   drawChart('chartHistogram', 'bar', {
     labels,
     datasets: [{ data: bins, backgroundColor: '#d9822b', borderRadius: 5 }]
-  }, { plugins:{legend:{display:false}}, scales:{ y:{ beginAtZero:true, grid:{color:'#ece9e2'} }, x:{ grid:{display:false} } } });
+  }, {
+    layout:{ padding:{ top:18 } },
+    plugins:{ legend:{display:false}, barValueLabels:{ enabled:true, color:'#6b6255' } },
+    scales:{ y:{ beginAtZero:true, grid:{color:'#ece9e2'} }, x:{ grid:{display:false} } }
+  });
 }
 
 function renderAbvHistogram(){
@@ -1130,38 +1134,53 @@ function renderAbvHistogram(){
     bins[idx]++;
   }
   const labels = bins.map((_,i) => i === 6 ? '12%+' : `${i*2}-${i*2+2}%`);
+  const peak = bins.indexOf(Math.max(...bins));
+  $('#abvHistCap').textContent = bins.some(v=>v>0)
+    ? `Count of beers per 2-point ABV band. Most sit in the ${labels[peak]} range (${bins[peak]} beers).`
+    : 'Count of beers per 2-point ABV band. No ABVs logged yet.';
   drawChart('chartAbvHistogram', 'bar', {
     labels,
     datasets: [{ data: bins, backgroundColor: '#7a5c9e', borderRadius: 5 }]
-  }, { plugins:{legend:{display:false}}, scales:{ y:{ beginAtZero:true, grid:{color:'#ece9e2'} }, x:{ grid:{display:false} } } });
+  }, {
+    layout:{ padding:{ top:18 } },
+    plugins:{ legend:{display:false}, barValueLabels:{ enabled:true, color:'#6b6255' } },
+    scales:{ y:{ beginAtZero:true, grid:{color:'#ece9e2'} }, x:{ grid:{display:false} } }
+  });
 }
 
-// Days between a beer being logged (Created time) and actually posted
+// Months between a beer being logged (Created time) and actually posted
 // (the Posted date) — a backlog-age view of the content pipeline shown
-// elsewhere as a status breakdown, not a duration.
+// elsewhere as a status breakdown, not a duration. Bucketed by calendar
+// month difference rather than exact days, since "roughly how many months
+// does this sit in the backlog" is the useful question here.
 const POSTING_LAG_BUCKETS = [
-  [3, '0-3 days'], [7, '4-7 days'], [14, '8-14 days'], [30, '15-30 days'],
-  [60, '31-60 days'], [90, '61-90 days'], [Infinity, '90+ days'],
+  [0, 'Same month'], [1, '1 month'], [2, '2 months'],
+  [5, '3-5 months'], [11, '6-11 months'], [Infinity, '12+ months'],
 ];
 function renderPostingLag(){
   const bins = new Array(POSTING_LAG_BUCKETS.length).fill(0);
   const lags = [];
   for (const b of DATA.beers) {
     if (!b.posted || !b.createdTime) continue;
-    const lagDays = Math.round((new Date(b.posted) - new Date(b.createdTime)) / 86400000);
-    if (lagDays < 0) continue; // guard against bad data (posted before logged)
-    lags.push(lagDays);
-    const idx = POSTING_LAG_BUCKETS.findIndex(([max]) => lagDays <= max);
+    const created = new Date(b.createdTime), posted = new Date(b.posted);
+    const lagMonths = (posted.getFullYear()-created.getFullYear())*12 + (posted.getMonth()-created.getMonth());
+    if (lagMonths < 0) continue; // guard against bad data (posted before logged)
+    lags.push(lagMonths);
+    const idx = POSTING_LAG_BUCKETS.findIndex(([max]) => lagMonths <= max);
     bins[idx]++;
   }
-  const avgLag = lags.length ? Math.round(lags.reduce((s,v)=>s+v,0)/lags.length) : null;
+  const avgLag = lags.length ? (lags.reduce((s,v)=>s+v,0)/lags.length) : null;
   $('#postingLagCap').textContent = avgLag != null
-    ? `Average ${avgLag} day${avgLag===1?'':'s'} from logging to posting, across ${lags.length} posted beer${lags.length===1?'':'s'} — click to zoom`
-    : 'No beers with both a logged and posted date yet';
+    ? `How many months pass between logging a beer and posting about it. Averaging ${avgLag.toFixed(1)} month${avgLag.toFixed(1)==='1.0'?'':'s'}, across ${lags.length} posted beer${lags.length===1?'':'s'}.`
+    : 'How many months pass between logging a beer and posting about it. No beers with both a logged and posted date yet.';
   drawChart('chartPostingLag', 'bar', {
     labels: POSTING_LAG_BUCKETS.map(([,label]) => label),
     datasets: [{ data: bins, backgroundColor: '#2383e2', borderRadius: 5 }]
-  }, { plugins:{legend:{display:false}}, scales:{ y:{ beginAtZero:true, grid:{color:'#ece9e2'} }, x:{ grid:{display:false} } } });
+  }, {
+    layout:{ padding:{ top:18 } },
+    plugins:{ legend:{display:false}, barValueLabels:{ enabled:true, color:'#6b6255' } },
+    scales:{ y:{ beginAtZero:true, grid:{color:'#ece9e2'} }, x:{ grid:{display:false} } }
+  });
 }
 
 function pearson(pairs){
@@ -1190,7 +1209,14 @@ function renderScatter(){
     scales:{ x:{ title:{ display:true, text:'ABV %' }, grid:{color:'#ece9e2'} }, y:{ title:{ display:true, text:'Rating' }, grid:{color:'#ece9e2'} } }
   });
   const r = pearson(points.map(b => [b.abv, b.rating]));
-  $('#correlationLabel').textContent = r == null ? '' : `r = ${r.toFixed(2)}`;
+  let strength = 'no real correlation';
+  if (r != null) {
+    const abs = Math.abs(r);
+    const word = abs < 0.1 ? 'no real correlation' : abs < 0.3 ? 'a weak correlation' : abs < 0.5 ? 'a moderate correlation' : 'a strong correlation';
+    strength = abs < 0.1 ? word : `${word} (${r > 0 ? 'stronger beers rate a bit higher' : 'stronger beers rate a bit lower'})`;
+  }
+  $('#scatterCap').textContent = `Each dot is one beer, coloured by style family — up and to the right means stronger beers rating higher too. ` +
+    (r == null ? 'Not enough data yet for a correlation.' : `Right now: r = ${r.toFixed(2)}, ${strength}.`);
 }
 
 function renderFamilyList(){
@@ -1201,52 +1227,45 @@ function renderFamilyList(){
     stats[f].count++;
     if (b.rating != null) { stats[f].sum += b.rating; stats[f].rated++; }
   }
-  const rows = Object.entries(stats).sort((a,b)=>b[1].count-a[1].count).slice(0,8);
-  const max = rows.length ? rows[0][1].count : 1;
-  $('#familyList').innerHTML = rows.map(([family, s]) => `
+  const entries = Object.entries(stats).map(([family, s]) => ({ family, ...s, avg: s.rated ? s.sum/s.rated : null }));
+  // Ranked by average rating now (families with no rated beers yet sink to
+  // the bottom, ordered by volume among themselves as a tiebreaker).
+  entries.sort((a,b) => {
+    if (a.avg == null && b.avg == null) return b.count - a.count;
+    if (a.avg == null) return 1;
+    if (b.avg == null) return -1;
+    return b.avg - a.avg;
+  });
+  const rows = entries.slice(0,8);
+  $('#familyList').innerHTML = rows.map(r => `
     <div class="tagrow">
-      <span class="tagname"><span class="tagdot" style="background:${familyColor(family)};display:inline-block;margin-right:5px"></span>${family}</span>
-      <div class="tagbar-track"><div class="tagbar-fill" style="width:${(s.count/max*100).toFixed(0)}%;background:${familyColor(family)}"></div></div>
-      <span class="tagval">${s.count} · ${s.rated ? (s.sum/s.rated).toFixed(0) : '—'} avg</span>
+      <span class="tagname"><span class="tagdot" style="background:${familyColor(r.family)};display:inline-block;margin-right:5px"></span>${r.family}</span>
+      <div class="tagbar-track"><div class="tagbar-fill" style="width:${r.avg != null ? r.avg.toFixed(0) : 0}%;background:${familyColor(r.family)}"></div></div>
+      <span class="tagval">${r.avg != null ? r.avg.toFixed(0)+' avg' : '—'} · ${r.count}</span>
     </div>
   `).join('');
+  const top = entries.find(e => e.avg != null);
+  $('#familyListCap').textContent = top
+    ? `Ranked by average rating (families with at least one rated beer). Right now ${top.family} leads at ${top.avg.toFixed(0)}.`
+    : 'Ranked by average rating (families with at least one rated beer).';
 }
 
 function renderLeaderboard(){
-  const rows = DATA.breweries.filter(b => b._count >= 3 && b._avgRating != null)
-    .sort((a,b) => b._avgRating - a._avgRating).slice(0,8);
+  const qualifying = DATA.breweries.filter(b => b._count >= 3 && b._avgRating != null);
+  const rows = qualifying.slice().sort((a,b) => b._avgRating - a._avgRating).slice(0,10);
   $('#leaderboardBody').innerHTML = rows.map((b,i) => `
     <tr><td>${i+1}</td><td><strong>${esc(b.name)}</strong></td><td>${b._count}</td>
     <td><span class="pill ${b._avgRating>=80?'good':'amber'}">${b._avgRating.toFixed(0)}</span></td></tr>
   `).join('') || '<tr><td colspan="4" style="color:var(--muted)">Not enough data yet</td></tr>';
+  $('#leaderboardCap').textContent = qualifying.length
+    ? `Top 10 by average rating (min. 3 beers logged) — ${qualifying.length} brewer${qualifying.length===1?'y':'ies'} qualify so far.`
+    : 'Top 10 by average rating (min. 3 beers logged) — no brewery has 3+ rated beers yet.';
 }
 
 function renderRecentGallery(){
   const recent = DATA.beers.filter(b => b.imageCached)
     .sort((a,b) => new Date(b.createdTime) - new Date(a.createdTime)).slice(0,12);
   $('#recentGallery').innerHTML = recent.map(beerCardHtml).join('') || '<div style="color:var(--muted);font-size:12px">No photographed beers cached yet.</div>';
-}
-
-function renderBestWorst(){
-  const rated = DATA.beers.filter(b => b.rating != null);
-  if (!rated.length) {
-    $('#bestWorstGallery').innerHTML = '<div style="color:var(--muted);font-size:12px">No rated beers yet.</div>';
-    return;
-  }
-  const sorted = rated.slice().sort((a,b) => b.rating - a.rating);
-  const best = sorted[0];
-  const worst = sorted[sorted.length-1];
-  // Only one beer rated so far, or every beer tied on rating — showing
-  // the same card twice as "best" and "worst" would just be confusing.
-  const items = best.id === worst.id
-    ? [['emoji_events', 'Only rated beer', best]]
-    : [['emoji_events', 'Highest rated', best], ['trending_down', 'Lowest rated', worst]];
-  $('#bestWorstGallery').innerHTML = items.map(([icon, label, beer]) => `
-    <div class="bw-item">
-      <div class="bw-label"><span class="material-symbols-rounded">${icon}</span>${label}</div>
-      ${beerCardHtml(beer)}
-    </div>
-  `).join('');
 }
 
 // Content status (Notion's `Content` status property, e.g. "Scheduled",
@@ -2103,18 +2122,34 @@ function renderLocationList(){
 
 // ---------------- trends tab ----------------
 function monthKey(iso){ const d = new Date(iso); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`; }
+// "Oct '22" style labels for every month-axis chart, instead of raw
+// "2022-10" sort keys — read at a glance without translating in your head.
+function monthLabel(key){
+  const [y,m] = key.split('-').map(Number);
+  const short = new Date(y, m-1, 1).toLocaleDateString(undefined, { month:'short' });
+  return `${short} '${String(y).slice(-2)}`;
+}
 
 function renderMonthly(){
   const counts = {};
   for (const b of DATA.beers) { if (!b.createdTime) continue; const k = monthKey(b.createdTime); counts[k]=(counts[k]||0)+1; }
   const months = Object.keys(counts).sort();
   const values = months.map(m=>counts[m]);
+  const recentMonths = months.slice(-6);
+  const recentAvg = recentMonths.length ? recentMonths.reduce((s,m)=>s+counts[m],0)/recentMonths.length : null;
+  const peakIdx = values.length ? values.indexOf(Math.max(...values)) : -1;
+  $('#monthlyCap').textContent = peakIdx >= 0
+    ? `How many beers you logged each calendar month, by Created time. Busiest month was ${monthLabel(months[peakIdx])} with ${values[peakIdx]} beers` +
+      (recentAvg != null ? `; averaging ${recentAvg.toFixed(1)}/month over the last ${recentMonths.length}.` : '.')
+    : 'How many beers you logged each calendar month, by Created time.';
   drawChart('chartMonthly', 'bar', {
-    labels: months,
+    labels: months.map(monthLabel),
     datasets: [{ data: values, backgroundColor: '#5b7a3a', borderRadius: 5 }]
   }, {
+    layout:{ padding:{ top:18 } },
     plugins:{
       legend:{ display:false },
+      barValueLabels:{ enabled:true, color:'#6b6255' },
       tooltip:{ callbacks:{ label: (ctx) => {
         const v = ctx.parsed.y;
         if (ctx.dataIndex < 2 && v > 50) return `${v} beers (bar cut off — first 2 months were a backlog import)`;
@@ -2134,9 +2169,19 @@ function renderMonthlyRating(){
     sums[k].sum += b.rating; sums[k].n++;
   }
   const months = Object.keys(sums).sort();
+  const avgs = months.map(m => sums[m].sum/sums[m].n);
+  const base = `Average rating of beers logged each month — a palate-drift check for whether you're getting pickier or more generous.`;
+  if (months.length >= 2) {
+    const first = avgs[0], recent = avgs[avgs.length-1];
+    const diff = recent - first;
+    const direction = Math.abs(diff) < 2 ? 'holding pretty steady' : diff > 0 ? 'trending more generous' : 'trending pickier';
+    $('#monthlyRatingCap').textContent = `${base} Currently ${direction}: ${first.toFixed(0)} → ${recent.toFixed(0)}.`;
+  } else {
+    $('#monthlyRatingCap').textContent = `${base} Not enough months of data yet.`;
+  }
   drawChart('chartMonthlyRating', 'line', {
-    labels: months,
-    datasets: [{ data: months.map(m => sums[m].sum/sums[m].n), borderColor:'#d9822b', backgroundColor:'#fbead4', fill:true, tension:.3, pointRadius:2 }]
+    labels: months.map(monthLabel),
+    datasets: [{ data: avgs, borderColor:'#d9822b', backgroundColor:'#fbead4', fill:true, tension:.3, pointRadius:2 }]
   }, { plugins:{legend:{display:false}}, scales:{ y:{ grid:{color:'#ece9e2'} }, x:{grid:{display:false}} } });
 }
 
@@ -2153,9 +2198,23 @@ function renderFamilyTrends(){
     }
     return { label: family, data: months.map(m => counts[m]||0), borderColor: familyColor(family), backgroundColor: familyColor(family), tension:.3, pointRadius:0, borderWidth:2, fill:false };
   });
-  drawChart('chartFamilyTrends', 'line', { labels: months, datasets }, {
-    plugins:{ legend:{ position:'bottom', labels:{ boxWidth:9, font:{size:10.5} } } },
-    scales:{ y:{ beginAtZero:true, grid:{color:'#ece9e2'} }, x:{ grid:{display:false} } }
+  $('#familyTrendsCap').textContent = topFamilies.length
+    ? `Monthly volume of your top 4 style families right now (${topFamilies.join(', ')}). The y-axis is capped at 20/month for readability — hover near the top of a line to see the real count for any month that runs higher.`
+    : `Monthly volume of your top 4 style families. The y-axis is capped at 20/month for readability — hover near the top of a line to see the real count for any month that runs higher.`;
+  drawChart('chartFamilyTrends', 'line', { labels: months.map(monthLabel), datasets }, {
+    // 'index' + intersect:false so a month whose true value runs above the
+    // y-axis cap (and so gets visually clipped off the top) still shows a
+    // tooltip when you hover that column — you don't have to land a pixel
+    // on a line that isn't actually drawn there.
+    interaction:{ mode:'index', intersect:false },
+    plugins:{
+      legend:{ position:'bottom', labels:{ boxWidth:9, font:{size:10.5} } },
+      tooltip:{ callbacks:{ label: (ctx) => {
+        const v = ctx.parsed.y;
+        return `${ctx.dataset.label}: ${v}` + (v >= 20 ? ' (cut off at 20 on the chart — this is the real count)' : '');
+      } } }
+    },
+    scales:{ y:{ beginAtZero:true, max:20, grid:{color:'#ece9e2'} }, x:{ grid:{display:false} } }
   });
 }
 
@@ -2174,8 +2233,11 @@ function renderDiscoveryLoyalty(){
     beerCumByMonth[m] = beerCum;
     breweryCumByMonth[m] = seenBreweries.size;
   }
+  const ratio = seenBreweries.size ? beerCum/seenBreweries.size : null;
+  $('#discoveryCap').textContent = `Cumulative beers logged (left axis) against unique breweries tried (right axis) — lines converging means you're mostly discovering new breweries, a widening gap means you're revisiting the same ones. ` +
+    (ratio != null ? `Right now: ${beerCum} beers across ${seenBreweries.size} breweries, about ${ratio.toFixed(1)} beers per brewery.` : 'Not enough data yet.');
   drawChart('chartDiscovery', 'line', {
-    labels: months,
+    labels: months.map(monthLabel),
     datasets: [
       { label:'Cumulative beers', data: months.map(m=>beerCumByMonth[m]), borderColor:'#d9822b', backgroundColor:'#fbead4', tension:.3, pointRadius:0, borderWidth:2, fill:true, yAxisID:'y' },
       { label:'Unique breweries tried', data: months.map(m=>breweryCumByMonth[m]), borderColor:'#5b7a3a', backgroundColor:'transparent', tension:.3, pointRadius:0, borderWidth:2, fill:false, yAxisID:'y1' },
@@ -2208,15 +2270,20 @@ function renderSweetSpot(){
   }
   const max = Math.max(1, ...grid.flat());
   let html = '<div class="heatmap"><div></div>' + abvLabels.map(l => `<div class="heatmap-collabel">${l}</div>`).join('');
+  let peakLabel = null, peakCount = 0;
   ratingBands.forEach(([,,label], r) => {
     html += `<div class="heatmap-rowlabel">${label}</div>`;
-    html += grid[r].map(count => {
+    html += grid[r].map((count, c) => {
+      if (count > peakCount) { peakCount = count; peakLabel = `${label} rating, ${abvLabels[c]} ABV`; }
       const alpha = count ? (0.12 + 0.78 * count / max) : 0;
       return `<div class="heatmap-cell" style="background:rgba(217,130,43,${alpha.toFixed(2)})">${count || ''}</div>`;
     }).join('');
   });
   html += '</div>';
   $('#sweetSpotGrid').innerHTML = html;
+  $('#sweetSpotCap').textContent = peakCount
+    ? `Where ABV and rating cluster — darker cells (with a count) mean more beers fall there. Most land in the ${peakLabel} cell (${peakCount} beers).`
+    : 'Where ABV and rating cluster — darker cells (with a count) mean more beers fall there.';
 }
 
 function renderBreweryConsistency(){
@@ -2233,6 +2300,9 @@ function renderBreweryConsistency(){
     const stddev = Math.sqrt(ratings.reduce((s,r)=>s+(r-avg)**2,0)/ratings.length);
     points.push({ x: avg, y: stddev, r: Math.min(16, 4 + ratings.length*0.6), name: b.name, count: ratings.length });
   }
+  const mostConsistent = points.length ? points.slice().sort((a,b)=>a.y-b.y)[0] : null;
+  $('#consistencyCap').textContent = `Avg rating (x) vs. spread between highest and lowest rated beer (y), min. 3 rated beers per brewery — bottom-right is reliably great, top is hit-or-miss. ` +
+    (mostConsistent ? `Most consistent so far: ${mostConsistent.name} (avg ${mostConsistent.x.toFixed(0)}, ±${mostConsistent.y.toFixed(1)}).` : 'Not enough data yet (needs 3+ rated beers at one brewery).');
   drawChart('chartConsistency', 'bubble', {
     datasets: [{ data: points, backgroundColor:'rgba(217,130,43,.5)', borderColor:'#b8651a', borderWidth:1 }]
   }, {
@@ -2244,9 +2314,39 @@ function renderBreweryConsistency(){
   });
 }
 
+// Draws each bar's value as small text just above it. Chart.js core has
+// no built-in data-label support, so this is a minimal inline plugin
+// rather than pulling in a whole separate library for one feature — opt
+// in per-chart via options.plugins.barValueLabels.enabled, since it only
+// makes sense on the bar charts (a line chart with a label on every point
+// gets unreadable fast).
+const barValueLabelsPlugin = {
+  id: 'barValueLabels',
+  afterDatasetsDraw(chart, args, opts){
+    if (!opts || !opts.enabled) return;
+    const { ctx } = chart;
+    chart.data.datasets.forEach((dataset, di) => {
+      const meta = chart.getDatasetMeta(di);
+      if (meta.type !== 'bar') return;
+      meta.data.forEach((bar, i) => {
+        const value = dataset.data[i];
+        if (value == null || value === 0) return;
+        ctx.save();
+        ctx.fillStyle = opts.color || '#6b6255';
+        ctx.font = opts.font || '700 10px "Plus Jakarta Sans", sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'bottom';
+        ctx.fillText(String(value), bar.x, bar.y - 4);
+        ctx.restore();
+      });
+    });
+  }
+};
+if (window.Chart) Chart.register(barValueLabelsPlugin);
+
 // ---------------- chart helper ----------------
 // Every chart's last-drawn {type, data, options} is kept here so the
-// zoom modal can redraw a bigger copy of whichever chart was clicked,
+// expand modal can redraw a bigger copy of whichever chart was picked,
 // with axis min/max overrides layered on top.
 let chartConfigs = {};
 function drawChart(id, type, data, options){
@@ -2256,9 +2356,29 @@ function drawChart(id, type, data, options){
   charts[id] = new Chart(ctx, { type, data, options: merged });
   chartConfigs[id] = { type, data, options: merged };
 }
+// A deep clone that leaves functions alone (tooltip callbacks, etc.)
+// instead of JSON.stringify's round-trip, which silently drops any
+// function property — that was quietly breaking custom tooltips (like the
+// "cut off" explanations) the moment a chart got copied into the modal.
+function deepCloneKeepFns(value){
+  if (typeof value === 'function') return value;
+  if (Array.isArray(value)) return value.map(deepCloneKeepFns);
+  if (value && typeof value === 'object') {
+    const out = {};
+    for (const k in value) out[k] = deepCloneKeepFns(value[k]);
+    return out;
+  }
+  return value;
+}
 
-// ---------------- chart zoom modal ----------------
-const CHART_MODAL_TITLES = { chartHistogram: 'Rating distribution', chartScatter: 'ABV vs rating', chartAbvHistogram: 'ABV distribution', chartPostingLag: 'Posting lag' };
+// ---------------- chart expand modal ----------------
+const CHART_MODAL_TITLES = {
+  chartHistogram: 'Rating distribution', chartScatter: 'ABV vs rating',
+  chartAbvHistogram: 'ABV distribution', chartPostingLag: 'Posting lag',
+  chartMonthly: 'Beers logged per month', chartMonthlyRating: 'Average rating over time',
+  chartFamilyTrends: 'Style trends over time', chartDiscovery: 'Discovery vs. loyalty',
+  chartConsistency: 'Brewery consistency',
+};
 let chartModalInstance = null;
 let chartModalId = null;
 
@@ -2283,7 +2403,7 @@ function renderChartModalAxisControls(cfg){
   // control; a scatter plot gets both.
   const fields = cfg.type === 'scatter'
     ? [['chartXMin','X min'],['chartXMax','X max'],['chartYMin','Y min'],['chartYMax','Y max']]
-    : [['chartYMax','Y max']];
+    : (cfg.type === 'bar' || cfg.type === 'line') ? [['chartYMax','Y max']] : [];
   $('#chartModalAxisControls').innerHTML =
     fields.map(([id, label]) => `<label>${label}<input type="number" id="${id}" placeholder="Auto"></label>`).join('') +
     `<button type="button" id="chartResetZoom">Reset zoom</button>`;
@@ -2304,19 +2424,29 @@ function applyChartModalZoom(){
 }
 function drawChartModalCanvas(cfg, overrides){
   if (chartModalInstance) chartModalInstance.destroy();
-  const options = JSON.parse(JSON.stringify(cfg.options));
+  const options = deepCloneKeepFns(cfg.options);
   options.scales = options.scales || {};
   options.scales.x = { ...options.scales.x };
   options.scales.y = { ...options.scales.y };
-  if (overrides.xMin != null) options.scales.x.min = overrides.xMin; else delete options.scales.x.min;
-  if (overrides.xMax != null) options.scales.x.max = overrides.xMax; else delete options.scales.x.max;
-  if (overrides.yMin != null) options.scales.y.min = overrides.yMin; else delete options.scales.y.min;
-  if (overrides.yMax != null) options.scales.y.max = overrides.yMax; else delete options.scales.y.max;
+  // Only ever override, never delete — options here is a fresh clone of
+  // the chart's own base config on every call, so a chart's own default
+  // max (e.g. Style trends' cap at 20) survives until the user actually
+  // types something into the zoom control, not just because no override
+  // was passed this time round.
+  if (overrides.xMin != null) options.scales.x.min = overrides.xMin;
+  if (overrides.xMax != null) options.scales.x.max = overrides.xMax;
+  if (overrides.yMin != null) options.scales.y.min = overrides.yMin;
+  if (overrides.yMax != null) options.scales.y.max = overrides.yMax;
+  // Bigger, bolder value labels once expanded — the whole point of
+  // expanding is to see the counts more clearly.
+  if (options.plugins && options.plugins.barValueLabels && options.plugins.barValueLabels.enabled) {
+    options.plugins.barValueLabels = { ...options.plugins.barValueLabels, font: '700 15px "Plus Jakarta Sans", sans-serif' };
+  }
   const ctx = document.getElementById('chartModalCanvas');
-  chartModalInstance = new Chart(ctx, { type: cfg.type, data: JSON.parse(JSON.stringify(cfg.data)), options });
+  chartModalInstance = new Chart(ctx, { type: cfg.type, data: deepCloneKeepFns(cfg.data), options });
 }
-['chartHistogram','chartScatter','chartAbvHistogram','chartPostingLag'].forEach(id => {
-  document.getElementById(id).addEventListener('click', () => openChartModal(id));
+document.querySelectorAll('.chart-expand-btn').forEach(btn => {
+  btn.addEventListener('click', () => openChartModal(btn.dataset.chart));
 });
 $('#chartModalBackdrop').addEventListener('click', (e) => {
   if (e.target === e.currentTarget) closeChartModal();
