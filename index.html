@@ -170,7 +170,13 @@ a:hover{text-decoration:underline}
 .card h3{font-size:13.5px;font-weight:800;margin:0 0 2px;display:flex;align-items:center;gap:7px;letter-spacing:-.01em}
 .card h3 .material-symbols-rounded{font-size:17px;color:var(--accent);vertical-align:0}
 .card .cap{font-size:11px;color:var(--muted);margin:0 0 12px}
-.chart-wrap{position:relative;height:220px}
+/* overflow:hidden + a hard cap on the canvas itself is the real fix for
+   Chart.js getting "stuck" at a stale, larger size after a fast reflow
+   (rotating landscape -> portrait is the classic trigger) — even if the
+   canvas's internal resize glitches, it can never visually spill out of
+   its card. resizeAllCharts() below does the actual resync. */
+.chart-wrap{position:relative;height:220px;overflow:hidden}
+.chart-wrap canvas{max-width:100%;max-height:100%;display:block}
 .chart-wrap.short{height:170px}
 
 /* ---- gallery ---- */
@@ -825,6 +831,26 @@ if (window.Chart) {
 
 let DATA = { beers: [], breweries: [] };
 let charts = {};
+
+// Chart.js's own ResizeObserver can miss a beat during a fast reflow — a
+// device rotation being the classic trigger — leaving a canvas rendered at
+// its old (larger) size until something explicitly asks it to resize. The
+// CSS max-width/max-height on .chart-wrap canvas stops that from visually
+// overflowing the card even if this never ran, but calling .resize() on
+// every live chart resyncs them properly instead of just clipping them.
+function resizeAllCharts(){
+  Object.values(charts).forEach(chart => { try { chart.resize(); } catch {} });
+}
+let resizeAllChartsTimer = null;
+function scheduleChartResize(delay){
+  clearTimeout(resizeAllChartsTimer);
+  resizeAllChartsTimer = setTimeout(resizeAllCharts, delay);
+}
+window.addEventListener('resize', () => scheduleChartResize(150));
+// orientationchange fires before the viewport has actually finished
+// settling on some mobile browsers, so this waits a bit longer than the
+// plain resize handler above.
+window.addEventListener('orientationchange', () => scheduleChartResize(400));
 
 const $ = (sel) => document.querySelector(sel);
 const $$ = (sel) => Array.from(document.querySelectorAll(sel));
