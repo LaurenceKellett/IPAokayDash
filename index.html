@@ -2169,17 +2169,19 @@ function renderMonthly(){
     ? `How many beers you logged each calendar month, by Created time. Busiest month was ${monthLabel(months[peakIdx])} with ${values[peakIdx]} beers` +
       (recentAvg != null ? `; averaging ${recentAvg.toFixed(1)}/month over the last ${recentMonths.length}.` : '.')
     : 'How many beers you logged each calendar month, by Created time.';
-  drawChart('chartMonthly', 'bar', {
+  drawChart('chartMonthly', 'line', {
     labels: months.map(monthLabel),
-    datasets: [{ data: values, backgroundColor: '#5b7a3a', borderRadius: 5 }]
+    datasets: [{ data: values, borderColor:'#5b7a3a', backgroundColor:'#eaf2e2', fill:true, tension:.3, pointRadius:2 }]
   }, {
-    layout:{ padding:{ top:18 } },
+    // 'index' + intersect:false so a month above the y-max cap (clipped
+    // off the visible chart area) still shows a tooltip on hover, same
+    // fix as the Style trends chart.
+    interaction:{ mode:'index', intersect:false },
     plugins:{
       legend:{ display:false },
-      barValueLabels:{ enabled:true, color:'#6b6255' },
       tooltip:{ callbacks:{ label: (ctx) => {
         const v = ctx.parsed.y;
-        if (ctx.dataIndex < 2 && v > 50) return `${v} beers (bar cut off — first 2 months were a backlog import)`;
+        if (ctx.dataIndex < 2 && v > 50) return `${v} beers (cut off at 50 — first 2 months were a backlog import)`;
         return `${v} beers`;
       } } }
     },
