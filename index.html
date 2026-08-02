@@ -407,7 +407,6 @@ table.dt tr:hover td{background:var(--surface)}
       <button class="side-btn" data-tab="beers"><span class="material-symbols-rounded">liquor</span>Beers</button>
       <button class="side-btn" data-tab="breweries"><span class="material-symbols-rounded">factory</span>Breweries</button>
       <button class="side-btn" data-tab="styles"><span class="material-symbols-rounded">category</span>Styles</button>
-      <button class="side-btn" data-tab="trends"><span class="material-symbols-rounded">trending_up</span>Trends</button>
     </nav>
     <div class="sidebar-foot">
       <strong>Source</strong><br>Notion — Beers &amp; Breweries<br>Read-only, synced on demand.
@@ -477,6 +476,59 @@ table.dt tr:hover td{background:var(--surface)}
           <h3><span class="material-symbols-rounded">photo_library</span>Recently logged</h3>
           <p class="cap">Latest photographed beers</p>
           <div class="gallery" id="recentGallery"></div>
+        </div>
+        <div class="row">
+          <div class="card">
+            <h3><span class="material-symbols-rounded">flag</span>Content pipeline</h3>
+            <p class="cap">Where your logged beers stand on the way to a published post</p>
+            <div class="taglist" id="contentPipelineList"></div>
+          </div>
+          <div class="card">
+            <h3><span class="material-symbols-rounded">photo_camera</span>Photo pipeline</h3>
+            <p class="cap">Photograph status across every logged beer</p>
+            <div class="taglist" id="photoPipelineList"></div>
+          </div>
+        </div>
+        <div class="row">
+          <div class="card">
+            <h3><span class="material-symbols-rounded">calendar_month</span>Beers logged per month</h3>
+            <p class="cap">By Created time</p>
+            <div class="chart-wrap"><canvas id="chartMonthly"></canvas></div>
+          </div>
+          <div class="card">
+            <h3><span class="material-symbols-rounded">show_chart</span>Average rating over time</h3>
+            <p class="cap">Palate drift check — pickier or more generous lately?</p>
+            <div class="chart-wrap"><canvas id="chartMonthlyRating"></canvas></div>
+          </div>
+        </div>
+        <div class="row">
+          <div class="card">
+            <h3><span class="material-symbols-rounded">stacked_line_chart</span>Style trends over time</h3>
+            <p class="cap">Monthly volume of your top 4 style families</p>
+            <div class="chart-wrap"><canvas id="chartFamilyTrends"></canvas></div>
+          </div>
+          <div class="card">
+            <h3><span class="material-symbols-rounded">explore</span>Discovery vs. loyalty</h3>
+            <p class="cap">Cumulative beers logged vs. unique breweries tried</p>
+            <div class="chart-wrap"><canvas id="chartDiscovery"></canvas></div>
+          </div>
+        </div>
+        <div class="row">
+          <div class="card">
+            <h3><span class="material-symbols-rounded">grid_view</span>The sweet spot</h3>
+            <p class="cap">Where ABV and rating cluster — darker = more beers</p>
+            <div class="heatmap-scroll"><div id="sweetSpotGrid"></div></div>
+          </div>
+          <div class="card">
+            <h3><span class="material-symbols-rounded">balance</span>Brewery consistency</h3>
+            <p class="cap">Avg rating vs. spread (min. 3 rated beers) — bottom-right is reliably great, top is hit-or-miss</p>
+            <div class="chart-wrap"><canvas id="chartConsistency"></canvas></div>
+          </div>
+        </div>
+        <div class="card">
+          <h3><span class="material-symbols-rounded">location_on</span>Top locations</h3>
+          <p class="cap">By brewery count</p>
+          <div class="taglist" id="locationList"></div>
         </div>
       </div>
 
@@ -675,49 +727,6 @@ table.dt tr:hover td{background:var(--surface)}
         </div>
       </div>
 
-      <div class="view" id="view-trends">
-        <div class="row">
-          <div class="card">
-            <h3><span class="material-symbols-rounded">calendar_month</span>Beers logged per month</h3>
-            <p class="cap">By Created time</p>
-            <div class="chart-wrap"><canvas id="chartMonthly"></canvas></div>
-          </div>
-          <div class="card">
-            <h3><span class="material-symbols-rounded">show_chart</span>Average rating over time</h3>
-            <p class="cap">Palate drift check — pickier or more generous lately?</p>
-            <div class="chart-wrap"><canvas id="chartMonthlyRating"></canvas></div>
-          </div>
-        </div>
-        <div class="row">
-          <div class="card">
-            <h3><span class="material-symbols-rounded">stacked_line_chart</span>Style trends over time</h3>
-            <p class="cap">Monthly volume of your top 4 style families</p>
-            <div class="chart-wrap"><canvas id="chartFamilyTrends"></canvas></div>
-          </div>
-          <div class="card">
-            <h3><span class="material-symbols-rounded">explore</span>Discovery vs. loyalty</h3>
-            <p class="cap">Cumulative beers logged vs. unique breweries tried</p>
-            <div class="chart-wrap"><canvas id="chartDiscovery"></canvas></div>
-          </div>
-        </div>
-        <div class="row">
-          <div class="card">
-            <h3><span class="material-symbols-rounded">grid_view</span>The sweet spot</h3>
-            <p class="cap">Where ABV and rating cluster — darker = more beers</p>
-            <div class="heatmap-scroll"><div id="sweetSpotGrid"></div></div>
-          </div>
-          <div class="card">
-            <h3><span class="material-symbols-rounded">balance</span>Brewery consistency</h3>
-            <p class="cap">Avg rating vs. spread (min. 3 rated beers) — bottom-right is reliably great, top is hit-or-miss</p>
-            <div class="chart-wrap"><canvas id="chartConsistency"></canvas></div>
-          </div>
-        </div>
-        <div class="card">
-          <h3><span class="material-symbols-rounded">location_on</span>Top locations</h3>
-          <p class="cap">By brewery count</p>
-          <div class="taglist" id="locationList"></div>
-        </div>
-      </div>
     </div>
   </main>
 </div>
@@ -747,7 +756,7 @@ const FAMILY_COLORS = {
 };
 function familyColor(f){ return FAMILY_COLORS[f] || FAMILY_COLORS['Other']; }
 
-const TAB_LABELS = { overview:'Overview', beers:'Beers', breweries:'Breweries', styles:'Styles', trends:'Trends' };
+const TAB_LABELS = { overview:'Overview', beers:'Beers', breweries:'Breweries', styles:'Styles' };
 
 // ---------------- persisted UI state ----------------
 // Remembers which tab, filters, sort, and view (table/gallery) you had
@@ -963,6 +972,7 @@ function renderAll(){
   renderFamilyList();
   renderLeaderboard();
   renderRecentGallery();
+  renderPipelineStatus();
   populateBeerFilters();
   restoreBeerControls();
   populateBreweryFilters();
@@ -1166,6 +1176,42 @@ function contentStatusIcon(b){
   if (s.includes('schedul')) return { icon: 'schedule', cls: 'warning' };
   if (s.includes('photo') || s.includes('progress') || s.includes('review') || s.includes('draft')) return { icon: 'photo_camera', cls: 'amber' };
   return { icon: 'radio_button_unchecked', cls: 'muted' };
+}
+// Overview's "Content pipeline" / "Photo pipeline" cards — how many
+// logged beers sit at each stage of each pipeline. Uses the raw Content
+// and Photograph status values directly (not contentStatusText's
+// photograph-fallback), so each breakdown only shows values that actually
+// belong to that property.
+const CONTENT_STATUS_ORDER = ['Not started', 'Drafted', 'Scheduled', 'Posted'];
+const PHOTOGRAPH_STATUS_ORDER = ['Not started', 'Pending upload', 'Pending reshoot', 'Missed opportunity', 'Photographed', 'Drank on premises'];
+function pipelineStatusColor(status){
+  const s = status.toLowerCase();
+  if (s.includes('post') || s === 'photographed' || s.includes('drank')) return 'good';
+  if (s.includes('schedul') || s.includes('pending')) return 'warning';
+  if (s.includes('draft')) return 'amber';
+  return 'muted';
+}
+function pipelineListHtml(counts, order){
+  const keys = [...new Set([...order, ...Object.keys(counts)])].filter(k => counts[k]);
+  const max = Math.max(1, ...keys.map(k => counts[k] || 0));
+  return keys.map(k => `
+    <div class="tagrow">
+      <span class="tagname"><span class="status-dot ${pipelineStatusColor(k)}" style="display:inline-block;margin-right:5px"></span>${esc(k)}</span>
+      <div class="tagbar-track"><div class="tagbar-fill" style="width:${((counts[k]||0)/max*100).toFixed(0)}%;background:var(--accent)"></div></div>
+      <span class="tagval">${counts[k]||0}</span>
+    </div>
+  `).join('') || '<div style="color:var(--muted);font-size:12px">No beers logged yet.</div>';
+}
+function renderPipelineStatus(){
+  const contentCounts = {}, photoCounts = {};
+  for (const b of DATA.beers) {
+    const c = (b.content || '').trim() || 'Not started';
+    contentCounts[c] = (contentCounts[c]||0)+1;
+    const p = photographStatusText(b);
+    photoCounts[p] = (photoCounts[p]||0)+1;
+  }
+  $('#contentPipelineList').innerHTML = pipelineListHtml(contentCounts, CONTENT_STATUS_ORDER);
+  $('#photoPipelineList').innerHTML = pipelineListHtml(photoCounts, PHOTOGRAPH_STATUS_ORDER);
 }
 function statusDetailLine(b){
   const { cls } = contentStatusIcon(b);
