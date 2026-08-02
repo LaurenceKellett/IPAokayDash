@@ -167,6 +167,12 @@ a:hover{text-decoration:underline}
 
 /* ---- gallery ---- */
 .gallery{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:11px}
+/* Best & worst spotlight — only ever 1-2 cards, so cap the column width
+   instead of letting the shared .gallery grid stretch them full-width. */
+.bw-gallery{grid-template-columns:repeat(auto-fill,minmax(160px,220px))}
+.bw-item{display:flex;flex-direction:column;gap:6px}
+.bw-label{font-size:10.5px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.3px;display:flex;align-items:center;gap:4px}
+.bw-label .material-symbols-rounded{font-size:13px}
 .gcard{background:var(--card);border:1px solid var(--border);border-radius:7px;overflow:hidden;box-shadow:var(--shadow);border-top:3px solid var(--border-strong);cursor:pointer}
 .gimg{aspect-ratio:1;background:var(--placeholder-bg);display:flex;align-items:center;justify-content:center;font-size:24px;overflow:hidden}
 .gimg img{width:100%;height:100%;object-fit:cover}
@@ -459,6 +465,23 @@ table.dt tr:hover td{background:var(--surface)}
             <p class="cap">Coloured by style family — <span id="correlationLabel"></span> — click to zoom</p>
             <div class="chart-wrap chart-wrap-clickable"><canvas id="chartScatter"></canvas></div>
           </div>
+        </div>
+        <div class="row">
+          <div class="card">
+            <h3><span class="material-symbols-rounded">equalizer</span>ABV distribution</h3>
+            <p class="cap">Count of beers per 2-point ABV band — click to zoom</p>
+            <div class="chart-wrap chart-wrap-clickable"><canvas id="chartAbvHistogram"></canvas></div>
+          </div>
+          <div class="card">
+            <h3><span class="material-symbols-rounded">hourglass_top</span>Posting lag</h3>
+            <p class="cap" id="postingLagCap">Days between logging a beer and posting it — click to zoom</p>
+            <div class="chart-wrap chart-wrap-clickable"><canvas id="chartPostingLag"></canvas></div>
+          </div>
+        </div>
+        <div class="card">
+          <h3><span class="material-symbols-rounded">military_tech</span>Best &amp; worst</h3>
+          <p class="cap">Highest and lowest rated beers you've logged</p>
+          <div class="gallery bw-gallery" id="bestWorstGallery"></div>
         </div>
         <div class="row">
           <div class="card">
@@ -969,6 +992,9 @@ function renderAll(){
   renderKpis();
   renderHistogram();
   renderScatter();
+  renderAbvHistogram();
+  renderPostingLag();
+  renderBestWorst();
   renderFamilyList();
   renderLeaderboard();
   renderRecentGallery();
@@ -1091,6 +1117,53 @@ function renderHistogram(){
   }, { plugins:{legend:{display:false}}, scales:{ y:{ beginAtZero:true, grid:{color:'#ece9e2'} }, x:{ grid:{display:false} } } });
 }
 
+function renderAbvHistogram(){
+  // 2-point-wide bands from 0% up to a "12%+" overflow bucket — craft
+  // beer ABVs cluster tightly enough that 10-point bands (like the rating
+  // histogram) would flatten everything into one or two bars.
+  const bins = new Array(7).fill(0);
+  for (const b of DATA.beers) {
+    if (b.abv == null) continue;
+    let idx = Math.floor((b.abv*100)/2);
+    if (idx > 6) idx = 6;
+    if (idx < 0) idx = 0;
+    bins[idx]++;
+  }
+  const labels = bins.map((_,i) => i === 6 ? '12%+' : `${i*2}-${i*2+2}%`);
+  drawChart('chartAbvHistogram', 'bar', {
+    labels,
+    datasets: [{ data: bins, backgroundColor: '#7a5c9e', borderRadius: 5 }]
+  }, { plugins:{legend:{display:false}}, scales:{ y:{ beginAtZero:true, grid:{color:'#ece9e2'} }, x:{ grid:{display:false} } } });
+}
+
+// Days between a beer being logged (Created time) and actually posted
+// (the Posted date) — a backlog-age view of the content pipeline shown
+// elsewhere as a status breakdown, not a duration.
+const POSTING_LAG_BUCKETS = [
+  [3, '0-3 days'], [7, '4-7 days'], [14, '8-14 days'], [30, '15-30 days'],
+  [60, '31-60 days'], [90, '61-90 days'], [Infinity, '90+ days'],
+];
+function renderPostingLag(){
+  const bins = new Array(POSTING_LAG_BUCKETS.length).fill(0);
+  const lags = [];
+  for (const b of DATA.beers) {
+    if (!b.posted || !b.createdTime) continue;
+    const lagDays = Math.round((new Date(b.posted) - new Date(b.createdTime)) / 86400000);
+    if (lagDays < 0) continue; // guard against bad data (posted before logged)
+    lags.push(lagDays);
+    const idx = POSTING_LAG_BUCKETS.findIndex(([max]) => lagDays <= max);
+    bins[idx]++;
+  }
+  const avgLag = lags.length ? Math.round(lags.reduce((s,v)=>s+v,0)/lags.length) : null;
+  $('#postingLagCap').textContent = avgLag != null
+    ? `Average ${avgLag} day${avgLag===1?'':'s'} from logging to posting, across ${lags.length} posted beer${lags.length===1?'':'s'} — click to zoom`
+    : 'No beers with both a logged and posted date yet';
+  drawChart('chartPostingLag', 'bar', {
+    labels: POSTING_LAG_BUCKETS.map(([,label]) => label),
+    datasets: [{ data: bins, backgroundColor: '#2383e2', borderRadius: 5 }]
+  }, { plugins:{legend:{display:false}}, scales:{ y:{ beginAtZero:true, grid:{color:'#ece9e2'} }, x:{ grid:{display:false} } } });
+}
+
 function pearson(pairs){
   const n = pairs.length;
   if (n < 2) return null;
@@ -1152,6 +1225,28 @@ function renderRecentGallery(){
   const recent = DATA.beers.filter(b => b.imageCached)
     .sort((a,b) => new Date(b.createdTime) - new Date(a.createdTime)).slice(0,12);
   $('#recentGallery').innerHTML = recent.map(beerCardHtml).join('') || '<div style="color:var(--muted);font-size:12px">No photographed beers cached yet.</div>';
+}
+
+function renderBestWorst(){
+  const rated = DATA.beers.filter(b => b.rating != null);
+  if (!rated.length) {
+    $('#bestWorstGallery').innerHTML = '<div style="color:var(--muted);font-size:12px">No rated beers yet.</div>';
+    return;
+  }
+  const sorted = rated.slice().sort((a,b) => b.rating - a.rating);
+  const best = sorted[0];
+  const worst = sorted[sorted.length-1];
+  // Only one beer rated so far, or every beer tied on rating — showing
+  // the same card twice as "best" and "worst" would just be confusing.
+  const items = best.id === worst.id
+    ? [['emoji_events', 'Only rated beer', best]]
+    : [['emoji_events', 'Highest rated', best], ['trending_down', 'Lowest rated', worst]];
+  $('#bestWorstGallery').innerHTML = items.map(([icon, label, beer]) => `
+    <div class="bw-item">
+      <div class="bw-label"><span class="material-symbols-rounded">${icon}</span>${label}</div>
+      ${beerCardHtml(beer)}
+    </div>
+  `).join('');
 }
 
 // Content status (Notion's `Content` status property, e.g. "Scheduled",
@@ -2163,7 +2258,7 @@ function drawChart(id, type, data, options){
 }
 
 // ---------------- chart zoom modal ----------------
-const CHART_MODAL_TITLES = { chartHistogram: 'Rating distribution', chartScatter: 'ABV vs rating' };
+const CHART_MODAL_TITLES = { chartHistogram: 'Rating distribution', chartScatter: 'ABV vs rating', chartAbvHistogram: 'ABV distribution', chartPostingLag: 'Posting lag' };
 let chartModalInstance = null;
 let chartModalId = null;
 
@@ -2220,7 +2315,7 @@ function drawChartModalCanvas(cfg, overrides){
   const ctx = document.getElementById('chartModalCanvas');
   chartModalInstance = new Chart(ctx, { type: cfg.type, data: JSON.parse(JSON.stringify(cfg.data)), options });
 }
-['chartHistogram','chartScatter'].forEach(id => {
+['chartHistogram','chartScatter','chartAbvHistogram','chartPostingLag'].forEach(id => {
   document.getElementById(id).addEventListener('click', () => openChartModal(id));
 });
 $('#chartModalBackdrop').addEventListener('click', (e) => {
