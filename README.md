@@ -17,6 +17,14 @@ This is a companion to the existing [IPAokay Publisher](../IPAOkay) app (`post.i
 | Image cache | Cloudflare R2 (`DASH_IMAGES`) — Notion's file URLs expire, so photos are downloaded once and served from R2 |
 | Source of truth | Notion API v2022-06-28 (read-only) |
 
+### Fun mode
+
+The header carries a **Fun** switch that swaps the whole dashboard over to the 70s print theme used on [laurencekellett.co.uk](https://github.com/LaurenceKellett/CV) — paper/cream surfaces, ink borders with hard offset shadows, Shrikhand/Righteous/Bitter type, a rainbow rail down the left edge, and a matching chart palette.
+
+The default (amber/hop-green) theme is untouched: every Fun rule is scoped to `html[data-theme="fun"]`, and the 70s fonts are only requested once the theme is actually switched on, so a default page load costs exactly what it did before. The choice is remembered in `localStorage` under `ipaokay-theme` and re-applied by a small script in `<head>` before first paint, so whoever opens the page next gets whichever theme was left on.
+
+Chart canvases can't be restyled by CSS, so their colours live in the `PALETTES` object in `index.html` (the `clean` entry holds the exact hex values that were hardcoded before the theme existed). Flipping the switch calls `renderAll()` to redraw them.
+
 This deliberately mirrors the **IPAokay Publisher** setup (Pages + Functions + Git auto-deploy, same Notion token) rather than the Task Manager's separate-Worker-plus-Pages split — one Cloudflare project, one custom domain, nothing extra to wire up. The **visual design** (Plus Jakarta Sans, Material Symbols Rounded, card layout, topbar "sync dot") is taken from the Task Manager project and the `LK Design System.md` tokens, re-themed to an amber/hop-green palette.
 
 ### Why manual sync + R2 image cache

@@ -6,6 +6,24 @@
 <title>IPAokay Dashboard</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23141110'/%3E%3Cpath d='M10 13h10v10a2 2 0 0 1-2 2h-6a2 2 0 0 1-2-2V13z' fill='%23ffffff'/%3E%3Cpath d='M10.2 13c-.3-1 .2-2.2 1.2-2.6.7-.3 1.3.1 1.9.5.5-1 1.5-1.6 2.5-1.2.9.4 1.2 1.3 1.1 2.1.8-.6 1.9-.6 2.6.1.8.8.7 2 .1 2.8-.2.3-.5.4-.8.4H11c-.4 0-.7-.2-.8-.5z' fill='%23ffffff'/%3E%3Cpath d='M20 16c1.7 0 3 1.1 3 2.6v2.4c0 1.5-1.3 2.6-3 2.6' fill='none' stroke='%23ffffff' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E">
 <meta name="theme-color" content="#ffffff">
+<script>
+// Apply the remembered theme before first paint so there's no flash of the
+// default look on the way to Fun mode (or vice versa). The Fun-only fonts
+// are attached here too, rather than in the main <head> font request, so a
+// default-theme load costs exactly what it did before this existed.
+(function(){
+  try {
+    if (localStorage.getItem('ipaokay-theme') === 'fun') {
+      document.documentElement.setAttribute('data-theme', 'fun');
+      var l = document.createElement('link');
+      l.rel = 'stylesheet';
+      l.id = 'funFonts';
+      l.href = 'https://fonts.googleapis.com/css2?family=Shrikhand&family=Righteous&family=Bitter:wght@400;600;700&display=swap';
+      document.head.appendChild(l);
+    }
+  } catch (e) {}
+})();
+</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap" rel="stylesheet">
@@ -133,6 +151,22 @@ a:hover{text-decoration:underline}
 #syncBtn{font-size:12.5px;font-weight:700;color:#fff;background:var(--text);border:none;padding:9px 16px;border-radius:999px;display:inline-flex;align-items:center;gap:6px;transition:background .15s}
 #syncBtn:hover{background:#000}
 #syncBtn:disabled{opacity:.55;cursor:not-allowed}
+
+/* ---- Fun-mode toggle (header) ----
+   Deliberately quiet in the default theme: it sits beside the sync
+   controls as one more small header affordance, and only becomes loud
+   once Fun mode is actually on. */
+.theme-toggle{
+  -webkit-appearance:none;appearance:none;background:none;border:none;cursor:pointer;
+  display:inline-flex;align-items:center;gap:6px;font-family:var(--font-family);
+  font-size:11.5px;font-weight:700;color:var(--muted);padding:4px 0;flex:none;
+}
+.theme-toggle:hover{color:var(--text)}
+.toggle-track{width:32px;height:18px;border-radius:9px;background:var(--border-strong);position:relative;transition:background .25s;flex:none}
+.toggle-thumb{position:absolute;top:3px;left:3px;width:12px;height:12px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.25);transition:transform .25s}
+.theme-toggle[aria-checked="true"] .toggle-track{background:var(--accent)}
+.theme-toggle[aria-checked="true"] .toggle-thumb{transform:translateX(14px)}
+.theme-toggle:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:4px}
 
 /* ---- layout ---- */
 .container{max-width:1180px;margin:0 auto;padding:22px 28px 44px;width:100%}
@@ -393,6 +427,9 @@ table.dt tr:hover td{background:var(--surface)}
   .breadcrumb{font-size:12px}
   #syncBtn span:not(.material-symbols-rounded){display:none}
   #syncLabel{display:none}
+  /* Just the switch on narrow screens — the word would cost the
+     breadcrumb enough width to start truncating "Overview". */
+  .toggle-label{display:none}
   .container{padding:16px 16px 32px}
   .hero{padding:18px 18px;flex-direction:column;align-items:flex-start}
   .hero .val{font-size:32px}
@@ -408,6 +445,337 @@ table.dt tr:hover td{background:var(--surface)}
 }
 @media (max-width:420px){
   .kpis{grid-template-columns:1fr}
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   FUN THEME — 70s print, ported from the CV's Fun mode.
+   Everything below is scoped to html[data-theme="fun"], so the default
+   dashboard renders byte-for-byte as it did before this block existed.
+   Toggled by the switch in the header; remembered in localStorage.
+   ═══════════════════════════════════════════════════════════════════ */
+html[data-theme="fun"]{
+  --orange:#e2562b;
+  --mustard:#f2b134;
+  --teal:#1f8a8a;
+  --pink:#e8467c;
+  --ink:#3b2a20;
+  --paper:#f7efe1;
+  --cream:#fffaf0;
+  --tan:#d9c9ae;
+
+  --bg:var(--paper);
+  --surface:var(--paper);
+  --card:var(--cream);
+  --border:var(--tan);
+  --border-strong:var(--ink);
+  --text:var(--ink);
+  --muted:#6b5548;
+  --accent:var(--orange);
+  --accent-dark:var(--orange);
+  --accent-soft:var(--mustard);
+  --hop:var(--teal);
+  --hop-soft:#d6ecec;
+  --good:#1f7a4a;
+  --good-soft:#dff3e6;
+  --warning:#a35c12;
+  --warning-soft:var(--mustard);
+  --rating-purple:var(--pink);
+  --placeholder-bg:#efe3cd;
+  --shadow:5px 5px 0 var(--ink);
+  --radius:22px;
+  --radius-sm:14px;
+  --font-family:'Bitter',Georgia,'Times New Roman',serif;
+  --display:'Shrikhand','Cooper Black','Arial Rounded MT Bold',serif;
+  --label:'Righteous','Trebuchet MS',sans-serif;
+}
+
+html[data-theme="fun"] body{
+  background:
+    repeating-conic-gradient(from 0deg at 88% -4%, rgba(226,86,43,.12) 0deg 7.5deg, transparent 7.5deg 15deg),
+    var(--paper);
+  background-attachment:fixed;
+  padding-left:20px;
+}
+/* Rainbow rail down the left edge — the CV's signature frame. It sits
+   above the header and the mobile drawer so it reads as a page border
+   rather than a stripe inside the layout. */
+html[data-theme="fun"] body::before{
+  content:'';position:fixed;left:0;top:0;bottom:0;width:20px;z-index:45;pointer-events:none;
+  background:linear-gradient(to right,var(--orange) 0 25%,var(--mustard) 25% 50%,var(--teal) 50% 75%,var(--pink) 75% 100%);
+}
+
+/* ---- sidebar ---- */
+html[data-theme="fun"] #sidebar{border-right:3px solid var(--ink);gap:16px}
+html[data-theme="fun"] .sidebar-brand{font-family:var(--display);font-weight:400;font-size:19px;color:var(--orange);letter-spacing:.01em;text-shadow:2px 2px 0 var(--mustard),4px 4px 0 var(--teal)}
+html[data-theme="fun"] .sidebar-brand .mark .material-symbols-rounded{color:var(--ink)}
+html[data-theme="fun"] .side-section-label{font-family:var(--label);font-size:11px;color:var(--ink)}
+html[data-theme="fun"] .sidebar-nav{gap:9px}
+html[data-theme="fun"] .side-btn{
+  font-family:var(--label);font-weight:400;font-size:13.5px;color:var(--ink);
+  background:var(--cream);border:2.5px solid var(--ink);border-radius:999px;
+  box-shadow:3px 3px 0 var(--ink);padding:8px 12px;
+  transition:transform .18s cubic-bezier(.34,1.56,.64,1),box-shadow .18s ease,background .18s ease;
+}
+html[data-theme="fun"] .side-btn:hover{background:var(--mustard);color:var(--ink);transform:translate(-2px,-2px);box-shadow:5px 5px 0 var(--ink)}
+html[data-theme="fun"] .side-btn.active{background:var(--orange);color:var(--cream)}
+html[data-theme="fun"] .side-btn:nth-of-type(2n).active{background:var(--teal)}
+html[data-theme="fun"] .sidebar-foot{border-top:3px dotted var(--tan);color:var(--muted)}
+html[data-theme="fun"] .sidebar-foot strong{font-family:var(--label);font-weight:400;color:var(--ink)}
+
+/* ---- header ---- */
+html[data-theme="fun"] #mainHeader{border-bottom:3px solid var(--ink);padding-top:14px;padding-bottom:14px}
+html[data-theme="fun"] #mainHeader::before{
+  height:8px;
+  background:linear-gradient(to right,var(--orange) 0 25%,var(--mustard) 25% 50%,var(--teal) 50% 75%,var(--pink) 75% 100%);
+}
+/* The CV's wavy hero divider, hung off the bottom of the sticky header so
+   it rides over the content as you scroll. */
+html[data-theme="fun"] #mainHeader::after{
+  content:'';position:absolute;left:0;right:0;top:100%;height:20px;pointer-events:none;
+  background:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1000 64' preserveAspectRatio='none'><path d='M0 0H1000V52Q937.5 64 875 52T750 52T625 52T500 52T375 52T250 52T125 52T0 52Z' fill='%23e8467c'/><path d='M0 0H1000V38Q937.5 50 875 38T750 38T625 38T500 38T375 38T250 38T125 38T0 38Z' fill='%231f8a8a'/><path d='M0 0H1000V24Q937.5 36 875 24T750 24T625 24T500 24T375 24T250 24T125 24T0 24Z' fill='%23f2b134'/><path d='M0 0H1000V10Q937.5 22 875 10T750 10T625 10T500 10T375 10T250 10T125 10T0 10Z' fill='%23e2562b'/></svg>") center / 100% 100% no-repeat;
+}
+html[data-theme="fun"] .breadcrumb{font-family:var(--label);font-size:13px;color:var(--muted)}
+html[data-theme="fun"] .breadcrumb strong{font-weight:400;color:var(--ink)}
+html[data-theme="fun"] #hamburgerBtn{background:var(--mustard);border:2.5px solid var(--ink);border-radius:999px;box-shadow:3px 3px 0 var(--ink)}
+html[data-theme="fun"] .sync{font-weight:700;color:var(--ink)}
+html[data-theme="fun"] .sync-dot{border:2.5px solid var(--ink);width:13px;height:13px;box-sizing:content-box;background:var(--mustard)}
+html[data-theme="fun"] .sync-dot.ok{background:var(--teal)}
+html[data-theme="fun"] #syncBtn{
+  font-family:var(--label);font-weight:400;font-size:13px;color:var(--cream);background:var(--orange);
+  border:2.5px solid var(--ink);box-shadow:4px 4px 0 var(--ink);padding:7px 15px;
+  transition:transform .18s cubic-bezier(.34,1.56,.64,1),box-shadow .18s ease,background .18s ease;
+}
+html[data-theme="fun"] #syncBtn:hover{background:var(--pink);transform:translate(-2px,-2px);box-shadow:6px 6px 0 var(--ink)}
+html[data-theme="fun"] #syncBtn:disabled{opacity:1;background:var(--tan);color:var(--ink)}
+
+/* ---- the toggle itself ---- */
+html[data-theme="fun"] .theme-toggle{
+  font-family:var(--label);font-size:13px;color:var(--ink);background:var(--mustard);
+  border:3px solid var(--ink);border-radius:999px;padding:4px 6px 4px 12px;
+  box-shadow:4px 4px 0 var(--ink);transform:rotate(3deg);
+  transition:transform .18s cubic-bezier(.34,1.56,.64,1),box-shadow .18s ease;
+}
+html[data-theme="fun"] .theme-toggle:hover{color:var(--ink);transform:rotate(-3deg) scale(1.06);box-shadow:6px 6px 0 var(--ink)}
+html[data-theme="fun"] .toggle-track{background:var(--cream);border:2.5px solid var(--ink);height:19px;width:34px}
+html[data-theme="fun"] .toggle-thumb{top:1px;left:1px;background:var(--orange);border:2px solid var(--ink);box-shadow:none}
+html[data-theme="fun"] .theme-toggle[aria-checked="true"] .toggle-track{background:var(--cream)}
+html[data-theme="fun"] .theme-toggle:focus-visible{outline-color:var(--teal)}
+
+/* ---- hero ---- */
+html[data-theme="fun"] .hero{border:3px solid var(--ink);box-shadow:10px 10px 0 var(--mustard);align-items:center;padding:26px 28px}
+html[data-theme="fun"] .hero .lbl{
+  display:inline-flex;align-items:center;gap:9px;width:fit-content;font-family:var(--label);font-weight:400;
+  font-size:13px;color:var(--paper);background:var(--teal);border-radius:999px;padding:5px 16px 5px 10px;
+  box-shadow:4px 4px 0 var(--ink);
+}
+html[data-theme="fun"] .hero .lbl::before{content:'';width:12px;height:12px;border-radius:50%;background:var(--mustard);border:2px solid var(--paper);flex:none}
+html[data-theme="fun"] .hero .val{
+  font-family:var(--display);font-weight:400;font-size:46px;line-height:1.05;letter-spacing:.005em;
+  color:var(--orange);text-shadow:3px 3px 0 var(--mustard),6px 6px 0 var(--teal),9px 9px 0 var(--pink);
+  transform:rotate(-1.5deg);transform-origin:left center;width:fit-content;margin-top:14px;padding-right:10px;
+  transition:transform .3s ease,text-shadow .3s ease;
+}
+html[data-theme="fun"] .hero .val:hover{transform:rotate(-2.5deg) translate(-3px,-3px);text-shadow:5px 5px 0 var(--mustard),10px 10px 0 var(--teal),15px 15px 0 var(--pink)}
+html[data-theme="fun"] .hero .sub{font-weight:700;color:var(--ink);margin-top:10px}
+html[data-theme="fun"] .hero-stats{gap:14px}
+html[data-theme="fun"] .hero-stat{
+  text-align:center;background:var(--cream);border:2.5px solid var(--ink);border-radius:16px;
+  padding:9px 14px;box-shadow:4px 4px 0 var(--ink);
+  transition:transform .18s cubic-bezier(.34,1.56,.64,1),box-shadow .18s ease;
+}
+html[data-theme="fun"] .hero-stat:nth-child(1){background:var(--orange)}
+html[data-theme="fun"] .hero-stat:nth-child(2){background:var(--mustard)}
+html[data-theme="fun"] .hero-stat:nth-child(3){background:var(--teal)}
+html[data-theme="fun"] .hero-stat:nth-child(1) .n,html[data-theme="fun"] .hero-stat:nth-child(1) .l,
+html[data-theme="fun"] .hero-stat:nth-child(3) .n,html[data-theme="fun"] .hero-stat:nth-child(3) .l{color:var(--cream)}
+html[data-theme="fun"] .hero-stat:hover{transform:translate(-2px,-2px) rotate(-2deg);box-shadow:6px 6px 0 var(--ink)}
+html[data-theme="fun"] .hero-stat .n{font-family:var(--label);font-weight:400;font-size:19px;color:var(--ink)}
+html[data-theme="fun"] .hero-stat .l{font-size:10px;color:var(--ink)}
+
+/* ---- KPI tiles ---- */
+html[data-theme="fun"] .kpis{gap:16px}
+html[data-theme="fun"] .kpi{border:3px solid var(--ink);border-radius:20px;transition:transform .2s ease,box-shadow .2s ease}
+html[data-theme="fun"] .kpi:nth-child(4n+1){box-shadow:7px 7px 0 var(--orange)}
+html[data-theme="fun"] .kpi:nth-child(4n+2){box-shadow:7px 7px 0 var(--teal)}
+html[data-theme="fun"] .kpi:nth-child(4n+3){box-shadow:7px 7px 0 var(--pink)}
+html[data-theme="fun"] .kpi:nth-child(4n+4){box-shadow:7px 7px 0 var(--mustard)}
+html[data-theme="fun"] .kpi:hover{transform:translate(-3px,-3px)}
+html[data-theme="fun"] .kpi:nth-child(4n+1):hover{box-shadow:10px 10px 0 var(--orange)}
+html[data-theme="fun"] .kpi:nth-child(4n+2):hover{box-shadow:10px 10px 0 var(--teal)}
+html[data-theme="fun"] .kpi:nth-child(4n+3):hover{box-shadow:10px 10px 0 var(--pink)}
+html[data-theme="fun"] .kpi:nth-child(4n+4):hover{box-shadow:10px 10px 0 var(--mustard)}
+html[data-theme="fun"] .kpi .lbl{font-family:var(--label);font-weight:400;font-size:11.5px;color:var(--ink)}
+html[data-theme="fun"] .kpi .val{font-family:var(--display);font-weight:400;font-size:25px;color:var(--orange);letter-spacing:0}
+html[data-theme="fun"] .kpi:nth-child(4n+2) .val{color:var(--teal)}
+html[data-theme="fun"] .kpi:nth-child(4n+3) .val{color:var(--pink)}
+html[data-theme="fun"] .kpi:nth-child(4n+4) .val{color:var(--ink)}
+
+/* ---- cards ---- */
+html[data-theme="fun"] .row{gap:20px}
+html[data-theme="fun"] .view{gap:22px}
+html[data-theme="fun"] .card{border:3px solid var(--ink);padding:20px 22px 22px;transition:transform .2s ease,box-shadow .2s ease}
+html[data-theme="fun"] .card:nth-of-type(odd){box-shadow:9px 9px 0 var(--orange)}
+html[data-theme="fun"] .card:nth-of-type(even){box-shadow:9px 9px 0 var(--teal)}
+html[data-theme="fun"] .card:hover{transform:translate(-3px,-3px)}
+html[data-theme="fun"] .card:nth-of-type(odd):hover{box-shadow:12px 12px 0 var(--orange)}
+html[data-theme="fun"] .card:nth-of-type(even):hover{box-shadow:12px 12px 0 var(--teal)}
+/* Card titles become the CV's section bands: an ink pill with a coloured
+   hard shadow. The Expand chip rides inside the band as its own control. */
+html[data-theme="fun"] .card h3{
+  display:inline-flex;width:fit-content;max-width:100%;align-items:center;gap:9px;
+  font-family:var(--label);font-weight:400;font-size:15px;letter-spacing:.01em;
+  background:var(--ink);color:var(--paper);border-radius:999px;padding:6px 18px 6px 10px;
+  margin:0 0 10px;box-shadow:4px 4px 0 var(--mustard);
+  transition:transform .18s cubic-bezier(.34,1.56,.64,1);
+}
+html[data-theme="fun"] .card:nth-of-type(even) h3{box-shadow:4px 4px 0 var(--pink)}
+html[data-theme="fun"] .card h3:hover{transform:translate(-2px,-2px) rotate(-1.5deg)}
+html[data-theme="fun"] .card h3 .material-symbols-rounded{color:var(--mustard);font-size:19px}
+html[data-theme="fun"] .card:nth-of-type(even) h3 .material-symbols-rounded{color:var(--pink)}
+html[data-theme="fun"] .card .cap{font-size:12px;color:var(--muted);line-height:1.55;margin-bottom:14px}
+html[data-theme="fun"] .chart-expand-btn{
+  margin-left:6px;background:var(--cream);color:var(--ink);border:2px solid var(--ink);border-radius:999px;
+  font-family:var(--label);font-weight:400;font-size:11px;padding:2px 9px;
+}
+html[data-theme="fun"] .chart-expand-btn:hover{background:var(--mustard);color:var(--ink)}
+html[data-theme="fun"] .empty{font-size:14px;color:var(--ink)}
+
+/* ---- tables ---- */
+html[data-theme="fun"] table.dt th{font-family:var(--label);font-weight:400;font-size:11.5px;color:var(--ink);padding-bottom:10px}
+html[data-theme="fun"] table.dt th[data-field]:hover{color:var(--orange)}
+html[data-theme="fun"] table.dt td{border-top:3px dotted var(--tan)}
+html[data-theme="fun"] table.dt tr:hover td{background:rgba(242,177,52,.22)}
+html[data-theme="fun"] .sort-arrow{color:var(--orange)}
+html[data-theme="fun"] .pill{
+  font-weight:700;border:2.5px solid var(--ink);box-shadow:2px 2px 0 var(--ink);padding:2px 9px;
+  transition:transform .18s cubic-bezier(.34,1.56,.64,1),box-shadow .18s ease;
+}
+html[data-theme="fun"] .pill:hover{transform:translate(-1px,-1px) rotate(-2deg);box-shadow:4px 4px 0 var(--ink)}
+html[data-theme="fun"] .pill.good{background:var(--teal);color:var(--cream)}
+html[data-theme="fun"] .pill.amber{background:var(--mustard);color:var(--ink)}
+html[data-theme="fun"] .pill.warning{background:var(--orange);color:var(--cream)}
+html[data-theme="fun"] .pill.muted{background:var(--cream);color:var(--ink)}
+html[data-theme="fun"] .tagchip{font-family:var(--label);font-weight:400}
+html[data-theme="fun"] .tagdot,html[data-theme="fun"] .status-dot{border:2px solid var(--ink);box-sizing:content-box}
+html[data-theme="fun"] .tagname{font-weight:700}
+html[data-theme="fun"] .tagbar-track{height:13px;background:var(--cream);border:2.5px solid var(--ink);border-radius:999px;transition:transform .2s ease}
+html[data-theme="fun"] .tagrow:hover .tagbar-track{transform:scaleY(1.25)}
+html[data-theme="fun"] .tagbar-fill{border-radius:0}
+html[data-theme="fun"] .tagval{font-weight:700;color:var(--ink)}
+html[data-theme="fun"] .rating-bar{height:10px;background:var(--cream);border:2.5px solid var(--ink);box-sizing:content-box}
+html[data-theme="fun"] .rating-num{font-family:var(--label);font-weight:400}
+html[data-theme="fun"] .beer-detail{border:3px solid var(--ink);border-radius:18px;background:var(--paper)}
+html[data-theme="fun"] .beer-detail-name{font-family:var(--label);font-weight:400;font-size:16px}
+html[data-theme="fun"] .brewery-detail-row td{background:rgba(242,177,52,.16)}
+html[data-theme="fun"] .brewery-detail-item{border-bottom:3px dotted var(--tan);font-weight:600}
+html[data-theme="fun"] .brewery-detail-item:hover{background:var(--cream)}
+html[data-theme="fun"] .brewery-detail-summary{font-size:13px}
+html[data-theme="fun"] .brewery-detail-divider{background:var(--tan);height:3px}
+html[data-theme="fun"] .beer-detail-photo-empty{background:var(--placeholder-bg)}
+
+/* ---- gallery ---- */
+html[data-theme="fun"] .gallery{gap:16px}
+html[data-theme="fun"] .gcard{
+  border:3px solid var(--ink);border-radius:16px;border-top-width:7px;box-shadow:5px 5px 0 var(--ink);
+  transition:transform .22s cubic-bezier(.34,1.56,.64,1),box-shadow .22s ease;
+}
+html[data-theme="fun"] .gcard:hover{transform:translate(-3px,-3px) rotate(-2deg);box-shadow:8px 8px 0 var(--ink)}
+html[data-theme="fun"] .gcard:nth-child(2n):hover{transform:translate(-3px,-3px) rotate(2deg)}
+html[data-theme="fun"] .gname{font-family:var(--label);font-weight:400;font-size:12px}
+html[data-theme="fun"] .gsub{color:var(--muted);font-weight:600}
+
+/* ---- controls ---- */
+html[data-theme="fun"] .filters-toggle{font-family:var(--label);font-weight:400;font-size:13.5px;color:var(--ink)}
+html[data-theme="fun"] .filters-toggle:hover{color:var(--orange)}
+html[data-theme="fun"] .controls{
+  background:var(--mustard);
+  background-image:radial-gradient(var(--cream) 2.2px,transparent 2.8px);
+  background-size:20px 20px;
+  border:3px solid var(--ink);box-shadow:6px 6px 0 var(--ink);padding:16px;
+}
+html[data-theme="fun"] .filter-field-label,html[data-theme="fun"] .slider-field-label{font-family:var(--label);font-weight:400;font-size:12px;color:var(--ink)}
+html[data-theme="fun"] .filter-field-label .material-symbols-rounded{color:var(--ink)}
+html[data-theme="fun"] .field{
+  border:2.5px solid var(--ink);border-radius:999px;background:var(--cream);color:var(--ink);
+  font-family:var(--font-family);font-weight:600;box-shadow:3px 3px 0 var(--ink);height:38px;padding:0 14px;
+}
+html[data-theme="fun"] .field:focus{border-color:var(--orange);box-shadow:3px 3px 0 var(--orange)}
+html[data-theme="fun"] input[type=range]{accent-color:var(--orange)}
+html[data-theme="fun"] .mini-btn,html[data-theme="fun"] .icon-btn{
+  font-family:var(--label);font-weight:400;background:var(--cream);color:var(--ink);
+  border:2.5px solid var(--ink);border-radius:999px;box-shadow:3px 3px 0 var(--ink);
+  transition:transform .18s cubic-bezier(.34,1.56,.64,1),box-shadow .18s ease,background .18s ease;
+}
+html[data-theme="fun"] .mini-btn:hover,html[data-theme="fun"] .icon-btn:hover{background:var(--mustard);color:var(--ink);transform:translate(-2px,-2px);box-shadow:5px 5px 0 var(--ink)}
+html[data-theme="fun"] .mini-btn.active{background:var(--orange);color:var(--cream);border-color:var(--ink)}
+html[data-theme="fun"] .icon-btn{width:38px;height:38px}
+html[data-theme="fun"] .expand-depth{font-family:var(--label);font-weight:400;color:var(--ink)}
+html[data-theme="fun"] .viewtoggle{background:var(--cream);border:2.5px solid var(--ink);border-radius:999px;box-shadow:3px 3px 0 var(--ink);padding:3px}
+html[data-theme="fun"] .viewtoggle button{border-radius:999px;color:var(--muted);font-family:var(--label);font-weight:400}
+html[data-theme="fun"] .viewtoggle button.active{background:var(--orange);color:var(--cream);box-shadow:none}
+html[data-theme="fun"] .pager{font-weight:600;color:var(--ink)}
+html[data-theme="fun"] .pager button{
+  font-family:var(--label);font-weight:400;background:var(--cream);border:2.5px solid var(--ink);
+  border-radius:999px;box-shadow:3px 3px 0 var(--ink);color:var(--ink);
+}
+html[data-theme="fun"] .pager button:hover:not(:disabled){background:var(--mustard)}
+
+/* ---- heatmap ---- */
+html[data-theme="fun"] .heatmap{gap:6px}
+html[data-theme="fun"] .heatmap-collabel,html[data-theme="fun"] .heatmap-rowlabel{font-family:var(--label);font-weight:400;font-size:10.5px;color:var(--ink)}
+html[data-theme="fun"] .heatmap-cell{
+  border:2.5px solid var(--ink);border-radius:8px;color:var(--ink);font-weight:800;
+  transition:transform .2s cubic-bezier(.34,1.56,.64,1);
+}
+html[data-theme="fun"] .heatmap-cell:hover{transform:rotate(-6deg) scale(1.12)}
+
+/* ---- modals / toast ---- */
+html[data-theme="fun"] .beer-modal-backdrop{background:rgba(59,42,32,.55)}
+html[data-theme="fun"] .beer-modal{border:3px solid var(--ink);box-shadow:12px 12px 0 var(--mustard)}
+html[data-theme="fun"] .beer-modal-close{background:var(--orange);color:var(--cream);border:2.5px solid var(--ink);box-shadow:3px 3px 0 var(--ink)}
+html[data-theme="fun"] .beer-modal-close:hover{background:var(--pink)}
+html[data-theme="fun"] #chartModalTitle{font-family:var(--label);font-weight:400;color:var(--ink)}
+html[data-theme="fun"] .chart-modal-axis-controls label{font-family:var(--label);font-weight:400;color:var(--ink)}
+html[data-theme="fun"] .chart-modal-axis-controls input,html[data-theme="fun"] .chart-modal-axis-controls button{
+  background:var(--cream);border:2.5px solid var(--ink);border-radius:999px;color:var(--ink);font-family:var(--label);font-weight:400;
+}
+html[data-theme="fun"] .toast{
+  background:var(--ink);color:var(--paper);border:3px solid var(--ink);border-radius:999px;
+  box-shadow:5px 5px 0 var(--mustard);font-weight:600;
+}
+
+/* ---- links ---- */
+html[data-theme="fun"] a{color:var(--orange)}
+html[data-theme="fun"] a:hover{color:var(--pink)}
+html[data-theme="fun"] .brewery-detail-meta a{color:var(--muted)}
+html[data-theme="fun"] .brewery-detail-meta a:hover{color:var(--orange)}
+
+/* ---- Fun cursors: a 70s smiley everywhere, a sparkle on anything clickable ---- */
+html[data-theme="fun"],html[data-theme="fun"] body{
+  cursor:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 32 32'><circle cx='16' cy='16' r='13' fill='%23f2b134' stroke='%233b2a20' stroke-width='3'/><circle cx='11' cy='13' r='2' fill='%233b2a20'/><circle cx='21' cy='13' r='2' fill='%233b2a20'/><path d='M9.5 19c2 3.5 11 3.5 13 0' fill='none' stroke='%233b2a20' stroke-width='3' stroke-linecap='round'/></svg>") 16 16,auto;
+}
+html[data-theme="fun"] a,
+html[data-theme="fun"] button,
+html[data-theme="fun"] select,
+html[data-theme="fun"] .gcard,
+html[data-theme="fun"] .beer-row,
+html[data-theme="fun"] .brewery-row,
+html[data-theme="fun"] .brewery-detail-item,
+html[data-theme="fun"] table.dt th[data-field]{
+  cursor:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 32 32'><path d='M16 1.5L19.4 12.6L30.5 16L19.4 19.4L16 30.5L12.6 19.4L1.5 16L12.6 12.6Z' fill='%23e8467c' stroke='%233b2a20' stroke-width='2.5' stroke-linejoin='round'/><circle cx='16' cy='16' r='2.5' fill='%23fffaf0' stroke='%233b2a20' stroke-width='1.5'/></svg>") 16 16,pointer;
+}
+
+/* ---- fun-mode responsive tweaks ---- */
+@media (max-width:860px){
+  html[data-theme="fun"] body{padding-left:12px}
+  html[data-theme="fun"] body::before{width:12px}
+  html[data-theme="fun"] .theme-toggle{transform:none;padding:4px 6px;gap:0;border-width:2.5px;box-shadow:3px 3px 0 var(--ink)}
+  html[data-theme="fun"] .theme-toggle:hover{transform:none}
+  html[data-theme="fun"] .hero .val{font-size:32px;text-shadow:2px 2px 0 var(--mustard),4px 4px 0 var(--teal),6px 6px 0 var(--pink)}
+  html[data-theme="fun"] .card{padding:16px 16px 18px}
+  html[data-theme="fun"] .card h3{font-size:13.5px}
+  html[data-theme="fun"] .kpi .val{font-size:20px}
+  html[data-theme="fun"] .card:nth-of-type(odd),html[data-theme="fun"] .card:nth-of-type(even){box-shadow:6px 6px 0 var(--ink)}
 }
 </style>
 </head>
@@ -436,6 +804,10 @@ table.dt tr:hover td{background:var(--surface)}
         <div class="breadcrumb">IPAokay / <strong id="breadcrumbTab">Overview</strong></div>
       </div>
       <div class="sync">
+        <button class="theme-toggle" id="themeToggle" type="button" role="switch" aria-checked="false" aria-label="Fun mode">
+          <span class="toggle-label">Fun</span>
+          <span class="toggle-track"><span class="toggle-thumb"></span></span>
+        </button>
         <span class="sync-dot" id="syncDot"></span>
         <span id="syncLabel">Loading…</span>
         <button id="syncBtn"><span class="material-symbols-rounded" style="font-size:15px;vertical-align:-3px">sync</span>Sync now</button>
@@ -782,12 +1154,57 @@ table.dt tr:hover td{background:var(--surface)}
 </div>
 
 <script>
+// ---------------- theme ----------------
+// The Fun theme is 99% CSS (see the block at the end of the stylesheet),
+// but chart canvases and inline-styled swatches are drawn in JS, so their
+// colours live here instead. The 'clean' palette holds exactly the hex
+// values that were hardcoded throughout before the theme existed, so the
+// default dashboard renders identically.
 const FAMILY_COLORS = {
-  'IPA':'#d9822b','Pale Ale':'#e3a857','Sour & Fruit':'#b6558c','Ale & Amber':'#a8562f',
-  'Belgian':'#7a5c9e','Lager & Pilsner':'#c9b23a','Stout & Porter':'#4a3428',
-  'Wheat & German':'#5b7a3a','Alcohol-free':'#2383e2','Other':'#8a8272'
+  clean: {
+    'IPA':'#d9822b','Pale Ale':'#e3a857','Sour & Fruit':'#b6558c','Ale & Amber':'#a8562f',
+    'Belgian':'#7a5c9e','Lager & Pilsner':'#c9b23a','Stout & Porter':'#4a3428',
+    'Wheat & German':'#5b7a3a','Alcohol-free':'#2383e2','Other':'#8a8272'
+  },
+  fun: {
+    'IPA':'#e2562b','Pale Ale':'#f2b134','Sour & Fruit':'#e8467c','Ale & Amber':'#b3421f',
+    'Belgian':'#8a5fa8','Lager & Pilsner':'#d9a520','Stout & Porter':'#3b2a20',
+    'Wheat & German':'#1f8a8a','Alcohol-free':'#4a7fb5','Other':'#a08a6a'
+  }
 };
-function familyColor(f){ return FAMILY_COLORS[f] || FAMILY_COLORS['Other']; }
+const PALETTES = {
+  clean: {
+    grid:'#ece9e2', tick:'#6b6255',
+    chartFont:"'Plus Jakarta Sans', sans-serif",
+    valueLabelFont:'700 10px "Plus Jakarta Sans", sans-serif',
+    valueLabelFontBig:'700 15px "Plus Jakarta Sans", sans-serif',
+    barRadius:5, barBorder:'transparent', barBorderWidth:0,
+    ratingBars:'#d9822b', abvBars:'#7a5c9e', lagBars:'#2383e2',
+    monthlyLine:'#5b7a3a', monthlyFill:'#eaf2e2',
+    ratingLine:'#d9822b', ratingFill:'#fbead4',
+    discoveryLine:'#d9822b', discoveryFill:'#fbead4', discoveryLine2:'#5b7a3a',
+    bubbleFill:'rgba(217,130,43,.5)', bubbleBorder:'#b8651a', bubbleBorderWidth:1,
+    heatRgb:'217,130,43',
+    sparks:['#d9822b','#5b7a3a','#b6558c','#7a5c9e']
+  },
+  fun: {
+    grid:'rgba(59,42,32,.22)', tick:'#3b2a20',
+    chartFont:"'Bitter', Georgia, serif",
+    valueLabelFont:'400 11px "Righteous", "Trebuchet MS", sans-serif',
+    valueLabelFontBig:'400 16px "Righteous", "Trebuchet MS", sans-serif',
+    barRadius:9, barBorder:'#3b2a20', barBorderWidth:2.5,
+    ratingBars:'#e2562b', abvBars:'#e8467c', lagBars:'#1f8a8a',
+    monthlyLine:'#1f8a8a', monthlyFill:'rgba(31,138,138,.28)',
+    ratingLine:'#e2562b', ratingFill:'rgba(242,177,52,.4)',
+    discoveryLine:'#e2562b', discoveryFill:'rgba(242,177,52,.4)', discoveryLine2:'#1f8a8a',
+    bubbleFill:'rgba(242,177,52,.7)', bubbleBorder:'#3b2a20', bubbleBorderWidth:2.5,
+    heatRgb:'226,86,43',
+    sparks:['#e2562b','#1f8a8a','#e8467c','#f2b134']
+  }
+};
+function themeName(){ return document.documentElement.getAttribute('data-theme') === 'fun' ? 'fun' : 'clean'; }
+function P(){ return PALETTES[themeName()]; }
+function familyColor(f){ const m = FAMILY_COLORS[themeName()]; return m[f] || m['Other']; }
 
 const TAB_LABELS = { overview:'Overview', beers:'Beers', breweries:'Breweries', styles:'Styles' };
 
@@ -830,11 +1247,13 @@ setupFilterToggle('beersFiltersToggle', 'beersControls', 'beers');
 setupFilterToggle('breweriesFiltersToggle', 'breweriesControls', 'breweries');
 setupFilterToggle('stylesFiltersToggle', 'stylesControls', 'styles');
 
-if (window.Chart) {
-  Chart.defaults.font.family = "'Plus Jakarta Sans', sans-serif";
-  Chart.defaults.color = '#6b6255';
+function applyChartDefaults(){
+  if (!window.Chart) return;
+  Chart.defaults.font.family = P().chartFont;
+  Chart.defaults.color = P().tick;
   Chart.defaults.font.size = 11;
 }
+applyChartDefaults();
 
 let DATA = { beers: [], breweries: [] };
 let charts = {};
@@ -925,6 +1344,43 @@ $('#hamburgerBtn').addEventListener('click', () => {
   $('#sidebar').classList.contains('open') ? closeSidebar() : openSidebar();
 });
 $('#sidebarBackdrop').addEventListener('click', closeSidebar);
+
+// ---------------- Fun theme toggle ----------------
+// Remembered in localStorage under 'ipaokay-theme' (its own key rather
+// than the dashboard's UI-state blob, so the boot script in <head> can
+// read it before first paint without parsing JSON). The look itself is
+// pure CSS; this only flips the attribute, lazy-loads the 70s fonts on
+// first use, and redraws the charts, whose colours live on a canvas and
+// so can't be restyled by the stylesheet.
+const THEME_KEY = 'ipaokay-theme';
+function ensureFunFonts(){
+  if (document.getElementById('funFonts')) return;
+  const l = document.createElement('link');
+  l.rel = 'stylesheet';
+  l.id = 'funFonts';
+  l.href = 'https://fonts.googleapis.com/css2?family=Shrikhand&family=Righteous&family=Bitter:wght@400;600;700&display=swap';
+  document.head.appendChild(l);
+}
+function applyTheme(fun){
+  if (fun) { ensureFunFonts(); document.documentElement.setAttribute('data-theme', 'fun'); }
+  else { document.documentElement.removeAttribute('data-theme'); }
+  $('#themeToggle').setAttribute('aria-checked', String(!!fun));
+  applyChartDefaults();
+  // Only redraw once there's data — before the first load the charts
+  // don't exist yet and renderAll() would throw on an empty DATA.
+  if (DATA.beers.length || DATA.breweries.length) {
+    renderAll();
+    if (chartModalId && chartConfigs[chartModalId]) drawChartModalCanvas(chartConfigs[chartModalId], {});
+  }
+}
+$('#themeToggle').addEventListener('click', () => {
+  const fun = themeName() !== 'fun';
+  applyTheme(fun);
+  try { localStorage.setItem(THEME_KEY, fun ? 'fun' : 'clean'); } catch (e) {}
+});
+// The <head> boot script has already set the attribute; this just syncs
+// the switch's own visual/ARIA state to it.
+$('#themeToggle').setAttribute('aria-checked', String(themeName() === 'fun'));
 
 // ---------------- data load ----------------
 async function loadData(){
@@ -1111,13 +1567,13 @@ function renderKpis(){
 
   const tiles = [
     { lbl:'Beers logged', val: beers.length.toLocaleString(),
-      spark: sparklineSVG(months.map(m=>monthlyCounts[m]||0), '#d9822b') },
+      spark: sparklineSVG(months.map(m=>monthlyCounts[m]||0), P().sparks[0]) },
     { lbl:'Unique breweries', val: DATA.breweries.length.toLocaleString(),
-      spark: sparklineSVG(months.map(m=>cumBreweriesByMonth[m]||0), '#5b7a3a') },
+      spark: sparklineSVG(months.map(m=>cumBreweriesByMonth[m]||0), P().sparks[1]) },
     { lbl:'Avg rating', val: fmtNum(avgRating,1),
-      spark: sparklineSVG(months.map(m=> monthlyRatingSums[m] ? monthlyRatingSums[m].sum/monthlyRatingSums[m].n : null).filter(v=>v!=null), '#b6558c') },
+      spark: sparklineSVG(months.map(m=> monthlyRatingSums[m] ? monthlyRatingSums[m].sum/monthlyRatingSums[m].n : null).filter(v=>v!=null), P().sparks[2]) },
     { lbl:'Avg ABV', val: fmtPct(avgAbv),
-      spark: sparklineSVG(months.map(m=> monthlyAbvSums[m] ? (monthlyAbvSums[m].sum/monthlyAbvSums[m].n)*100 : null).filter(v=>v!=null), '#7a5c9e') },
+      spark: sparklineSVG(months.map(m=> monthlyAbvSums[m] ? (monthlyAbvSums[m].sum/monthlyAbvSums[m].n)*100 : null).filter(v=>v!=null), P().sparks[3]) },
   ];
   $('#kpis').innerHTML = tiles.map(t => `
     <div class="kpi">
@@ -1149,11 +1605,11 @@ function renderHistogram(){
     : 'Count of rated beers per 10-point band. No ratings logged yet.';
   drawChart('chartHistogram', 'bar', {
     labels,
-    datasets: [{ data: bins, backgroundColor: '#d9822b', borderRadius: 5 }]
+    datasets: [{ data: bins, backgroundColor: P().ratingBars, borderRadius: P().barRadius, borderColor: P().barBorder, borderWidth: P().barBorderWidth }]
   }, {
     layout:{ padding:{ top:18 } },
-    plugins:{ legend:{display:false}, barValueLabels:{ enabled:true, color:'#6b6255' } },
-    scales:{ y:{ beginAtZero:true, grid:{color:'#ece9e2'} }, x:{ grid:{display:false} } },
+    plugins:{ legend:{display:false}, barValueLabels:{ enabled:true, color:P().tick, font:P().valueLabelFont } },
+    scales:{ y:{ beginAtZero:true, grid:{color:P().grid} }, x:{ grid:{display:false} } },
     onClick:(evt, elements) => {
       if (!elements.length) return;
       const idx = elements[0].index;
@@ -1182,11 +1638,11 @@ function renderAbvHistogram(){
     : 'Count of beers per 2-point ABV band. No ABVs logged yet.';
   drawChart('chartAbvHistogram', 'bar', {
     labels,
-    datasets: [{ data: bins, backgroundColor: '#7a5c9e', borderRadius: 5 }]
+    datasets: [{ data: bins, backgroundColor: P().abvBars, borderRadius: P().barRadius, borderColor: P().barBorder, borderWidth: P().barBorderWidth }]
   }, {
     layout:{ padding:{ top:18 } },
-    plugins:{ legend:{display:false}, barValueLabels:{ enabled:true, color:'#6b6255' } },
-    scales:{ y:{ beginAtZero:true, grid:{color:'#ece9e2'} }, x:{ grid:{display:false} } }
+    plugins:{ legend:{display:false}, barValueLabels:{ enabled:true, color:P().tick, font:P().valueLabelFont } },
+    scales:{ y:{ beginAtZero:true, grid:{color:P().grid} }, x:{ grid:{display:false} } }
   });
 }
 
@@ -1218,11 +1674,11 @@ function renderPostingLag(){
     : 'How many months pass between logging a beer and posting about it. No beers with both a logged and posted date yet.';
   drawChart('chartPostingLag', 'bar', {
     labels: POSTING_LAG_BUCKETS.map(([,label]) => label),
-    datasets: [{ data: bins, backgroundColor: '#2383e2', borderRadius: 5 }]
+    datasets: [{ data: bins, backgroundColor: P().lagBars, borderRadius: P().barRadius, borderColor: P().barBorder, borderWidth: P().barBorderWidth }]
   }, {
     layout:{ padding:{ top:18 } },
-    plugins:{ legend:{display:false}, barValueLabels:{ enabled:true, color:'#6b6255' } },
-    scales:{ y:{ beginAtZero:true, grid:{color:'#ece9e2'} }, x:{ grid:{display:false} } }
+    plugins:{ legend:{display:false}, barValueLabels:{ enabled:true, color:P().tick, font:P().valueLabelFont } },
+    scales:{ y:{ beginAtZero:true, grid:{color:P().grid} }, x:{ grid:{display:false} } }
   });
 }
 
@@ -1249,7 +1705,7 @@ function renderScatter(){
   }));
   drawChart('chartScatter', 'scatter', { datasets }, {
     plugins:{ legend:{ display:false } },
-    scales:{ x:{ title:{ display:true, text:'ABV %' }, grid:{color:'#ece9e2'} }, y:{ title:{ display:true, text:'Rating' }, grid:{color:'#ece9e2'} } }
+    scales:{ x:{ title:{ display:true, text:'ABV %' }, grid:{color:P().grid} }, y:{ title:{ display:true, text:'Rating' }, grid:{color:P().grid} } }
   });
   const r = pearson(points.map(b => [b.abv, b.rating]));
   let strength = 'no real correlation';
@@ -1445,6 +1901,13 @@ function normalizeSavedPageSize(raw){
 let expandedBeers = new Set();
 
 function populateBeerFilters(){
+  // Rebuilding a <select>'s options blanks its current value, so anything
+  // already picked is captured first and put back at the end — this runs
+  // on every renderAll(), including the one a theme switch triggers, and
+  // silently resetting the user's filters mid-session would be a bug.
+  const preserved = {};
+  ['beerBreweryFilter','beerFamilyFilter','beerContentFilter','beerPhotographFilter']
+    .forEach(id => { preserved[id] = $('#'+id).value; });
   const brewerySel = $('#beerBreweryFilter');
   brewerySel.innerHTML = '<option value="">All breweries</option>' +
     DATA.breweries.slice().sort((a,b)=>a.name.localeCompare(b.name))
@@ -1458,6 +1921,11 @@ function populateBeerFilters(){
   const photoStatuses = [...new Set(DATA.beers.map(photographStatusText))].sort();
   $('#beerPhotographFilter').innerHTML = '<option value="">Any photo state</option>' +
     photoStatuses.map(s => `<option value="${esc(s)}">${esc(s)}</option>`).join('');
+  Object.entries(preserved).forEach(([id, val]) => {
+    if (!val) return;
+    const el = $('#'+id);
+    if (el.querySelector(`option[value="${CSS.escape(val)}"]`)) el.value = val;
+  });
 }
 
 function beerSortValue(b, field){
@@ -2240,7 +2708,7 @@ function renderMonthly(){
     : 'How many beers you logged each calendar month, by Created time.';
   drawChart('chartMonthly', 'line', {
     labels: months.map(monthLabel),
-    datasets: [{ data: values, borderColor:'#5b7a3a', backgroundColor:'#eaf2e2', fill:true, tension:.3, pointRadius:2 }]
+    datasets: [{ data: values, borderColor:P().monthlyLine, backgroundColor:P().monthlyFill, fill:true, tension:.3, pointRadius:2 }]
   }, {
     // 'index' + intersect:false so a month above the y-max cap (clipped
     // off the visible chart area) still shows a tooltip on hover, same
@@ -2254,7 +2722,7 @@ function renderMonthly(){
         return `${v} beers`;
       } } }
     },
-    scales:{ y:{ beginAtZero:true, max:50, grid:{color:'#ece9e2'} }, x:{ grid:{display:false} } }
+    scales:{ y:{ beginAtZero:true, max:50, grid:{color:P().grid} }, x:{ grid:{display:false} } }
   });
 }
 
@@ -2279,8 +2747,8 @@ function renderMonthlyRating(){
   }
   drawChart('chartMonthlyRating', 'line', {
     labels: months.map(monthLabel),
-    datasets: [{ data: avgs, borderColor:'#d9822b', backgroundColor:'#fbead4', fill:true, tension:.3, pointRadius:2 }]
-  }, { plugins:{legend:{display:false}}, scales:{ y:{ grid:{color:'#ece9e2'} }, x:{grid:{display:false}} } });
+    datasets: [{ data: avgs, borderColor:P().ratingLine, backgroundColor:P().ratingFill, fill:true, tension:.3, pointRadius:2 }]
+  }, { plugins:{legend:{display:false}}, scales:{ y:{ grid:{color:P().grid} }, x:{grid:{display:false}} } });
 }
 
 function renderFamilyTrends(){
@@ -2312,7 +2780,7 @@ function renderFamilyTrends(){
         return `${ctx.dataset.label}: ${v}` + (v >= 20 ? ' (cut off at 20 on the chart — this is the real count)' : '');
       } } }
     },
-    scales:{ y:{ beginAtZero:true, max:20, grid:{color:'#ece9e2'} }, x:{ grid:{display:false} } }
+    scales:{ y:{ beginAtZero:true, max:20, grid:{color:P().grid} }, x:{ grid:{display:false} } }
   });
 }
 
@@ -2337,13 +2805,13 @@ function renderDiscoveryLoyalty(){
   drawChart('chartDiscovery', 'line', {
     labels: months.map(monthLabel),
     datasets: [
-      { label:'Cumulative beers', data: months.map(m=>beerCumByMonth[m]), borderColor:'#d9822b', backgroundColor:'#fbead4', tension:.3, pointRadius:0, borderWidth:2, fill:true, yAxisID:'y' },
-      { label:'Unique breweries tried', data: months.map(m=>breweryCumByMonth[m]), borderColor:'#5b7a3a', backgroundColor:'transparent', tension:.3, pointRadius:0, borderWidth:2, fill:false, yAxisID:'y1' },
+      { label:'Cumulative beers', data: months.map(m=>beerCumByMonth[m]), borderColor:P().discoveryLine, backgroundColor:P().discoveryFill, tension:.3, pointRadius:0, borderWidth:2, fill:true, yAxisID:'y' },
+      { label:'Unique breweries tried', data: months.map(m=>breweryCumByMonth[m]), borderColor:P().discoveryLine2, backgroundColor:'transparent', tension:.3, pointRadius:0, borderWidth:2, fill:false, yAxisID:'y1' },
     ]
   }, {
     plugins:{ legend:{ position:'bottom', labels:{ boxWidth:9, font:{size:10.5} } } },
     scales:{
-      y:{ beginAtZero:true, grid:{color:'#ece9e2'}, title:{display:true,text:'Beers',font:{size:10}} },
+      y:{ beginAtZero:true, grid:{color:P().grid}, title:{display:true,text:'Beers',font:{size:10}} },
       y1:{ beginAtZero:true, position:'right', grid:{display:false}, title:{display:true,text:'Breweries',font:{size:10}} },
       x:{ grid:{display:false} }
     }
@@ -2374,7 +2842,7 @@ function renderSweetSpot(){
     html += grid[r].map((count, c) => {
       if (count > peakCount) { peakCount = count; peakLabel = `${label} rating, ${abvLabels[c]} ABV`; }
       const alpha = count ? (0.12 + 0.78 * count / max) : 0;
-      return `<div class="heatmap-cell" style="background:rgba(217,130,43,${alpha.toFixed(2)})">${count || ''}</div>`;
+      return `<div class="heatmap-cell" style="background:rgba(${P().heatRgb},${alpha.toFixed(2)})">${count || ''}</div>`;
     }).join('');
   });
   html += '</div>';
@@ -2402,12 +2870,12 @@ function renderBreweryConsistency(){
   $('#consistencyCap').textContent = `Avg rating (x) vs. spread between highest and lowest rated beer (y), min. 3 rated beers per brewery — bottom-right is reliably great, top is hit-or-miss. ` +
     (mostConsistent ? `Most consistent so far: ${mostConsistent.name} (avg ${mostConsistent.x.toFixed(0)}, ±${mostConsistent.y.toFixed(1)}).` : 'Not enough data yet (needs 3+ rated beers at one brewery).');
   drawChart('chartConsistency', 'bubble', {
-    datasets: [{ data: points, backgroundColor:'rgba(217,130,43,.5)', borderColor:'#b8651a', borderWidth:1 }]
+    datasets: [{ data: points, backgroundColor:P().bubbleFill, borderColor:P().bubbleBorder, borderWidth:P().bubbleBorderWidth }]
   }, {
     plugins:{ legend:{ display:false }, tooltip:{ callbacks:{ label: (ctx) => { const p = points[ctx.dataIndex]; return `${p.name}: avg ${p.x.toFixed(0)}, ±${p.y.toFixed(1)} (${p.count} beers)`; } } } },
     scales:{
-      x:{ title:{ display:true, text:'Average rating' }, grid:{color:'#ece9e2'} },
-      y:{ title:{ display:true, text:'Rating spread (std dev)' }, grid:{color:'#ece9e2'} }
+      x:{ title:{ display:true, text:'Average rating' }, grid:{color:P().grid} },
+      y:{ title:{ display:true, text:'Rating spread (std dev)' }, grid:{color:P().grid} }
     }
   });
 }
@@ -2430,8 +2898,8 @@ const barValueLabelsPlugin = {
         const value = dataset.data[i];
         if (value == null || value === 0) return;
         ctx.save();
-        ctx.fillStyle = opts.color || '#6b6255';
-        ctx.font = opts.font || '700 10px "Plus Jakarta Sans", sans-serif';
+        ctx.fillStyle = opts.color || P().tick;
+        ctx.font = opts.font || P().valueLabelFont;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'bottom';
         ctx.fillText(String(value), bar.x, bar.y - 4);
@@ -2538,7 +3006,7 @@ function drawChartModalCanvas(cfg, overrides){
   // Bigger, bolder value labels once expanded — the whole point of
   // expanding is to see the counts more clearly.
   if (options.plugins && options.plugins.barValueLabels && options.plugins.barValueLabels.enabled) {
-    options.plugins.barValueLabels = { ...options.plugins.barValueLabels, font: '700 15px "Plus Jakarta Sans", sans-serif' };
+    options.plugins.barValueLabels = { ...options.plugins.barValueLabels, font: P().valueLabelFontBig };
   }
   const ctx = document.getElementById('chartModalCanvas');
   chartModalInstance = new Chart(ctx, { type: cfg.type, data: deepCloneKeepFns(cfg.data), options });
