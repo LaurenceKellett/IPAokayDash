@@ -114,3 +114,7 @@ Intentionally excluded: `Instagram Caption`, `Caption Prompt`, `Page Content`, `
 Brewery names in the Breweries table link out to `IPAOkay Link` (the brewery's page on ipaokay.co.uk) rather than its own `Website`, when set.
 
 Beer count and average rating per brewery are computed client-side from the joined Beers array rather than trusting Notion's own rollups, so they always reflect the latest sync.
+
+### Brand theme (default)
+
+The default look now follows the IPAokay website brand (see `docs/brand-brief.md` in the IPAokay repo): white paper and black ink, 2px black outlines, square boxes, Manrope, the site's pastel style colours, and the black-on-white score bar. It lives in one block (`IPAOKAY BRAND`) scoped to `html:not([data-theme="fun"])`, plus the `clean` entries of `PALETTES` and `FAMILY_COLORS`, so Fun mode is unchanged. To preview without Notion, serve `index.html` with any mock `/api/data`.

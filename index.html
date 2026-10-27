@@ -26,7 +26,7 @@
 </script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
 <style>
 :root{
@@ -446,6 +446,111 @@ table.dt tr:hover td{background:var(--surface)}
 @media (max-width:420px){
   .kpis{grid-template-columns:1fr}
 }
+
+/* ════════════════════════════════════════════════════════
+   IPAOKAY BRAND — the default theme, matching ipaokay.co.uk
+   (see docs/brand-brief.md in the IPAokay repo). Flat paper and ink,
+   2px black outlines, square boxes, pastel style colours, Manrope.
+   Scoped to html:not([data-theme="fun"]) so Fun mode is untouched.
+   ════════════════════════════════════════════════════════ */
+html:not([data-theme="fun"]){
+  --bg:#ffffff;
+  --surface:#FBFAF3;
+  --card:#ffffff;
+  --border:#e1e1e1;
+  --border-strong:#111111;
+  --text:#111111;
+  --muted:#686868;
+  --accent:#111111;
+  --accent-dark:#111111;
+  --accent-soft:#FFEE58;
+  --hop:#27500A;
+  --hop-soft:#C9EDB3;
+  --good:#27500A;
+  --good-soft:#C9EDB3;
+  --warning:#111111;
+  --warning-soft:#FFEE58;
+  --error:#d93838;
+  --error-soft:#F6CFF4;
+  --rating-purple:#111111;
+  --placeholder-bg:#f0efe9;
+  --shadow:none;
+  --radius:0px;
+  --radius-sm:0px;
+  --font-family:'Manrope',-apple-system,BlinkMacSystemFont,sans-serif;
+}
+html:not([data-theme="fun"]) body{background:#fff}
+html:not([data-theme="fun"]) #sidebar{border-right:2px solid #111}
+html:not([data-theme="fun"]) #mainHeader{border-bottom:2px solid #111}
+html:not([data-theme="fun"]) #mainHeader::before{height:6px;background:#FFEE58;border-bottom:2px solid #111}
+html:not([data-theme="fun"]) .sidebar-brand{font-weight:800;font-size:16px}
+html:not([data-theme="fun"]) .side-section-label{text-transform:none;letter-spacing:0}
+html:not([data-theme="fun"]) .side-btn{border:2px solid transparent}
+html:not([data-theme="fun"]) .side-btn:hover{background:#FFEE58;color:#111;border-color:#111}
+html:not([data-theme="fun"]) .side-btn.active{background:#111;color:#fff;border-color:#111}
+html:not([data-theme="fun"]) .hero,
+html:not([data-theme="fun"]) .kpi,
+html:not([data-theme="fun"]) .card,
+html:not([data-theme="fun"]) .filters-card,
+html:not([data-theme="fun"]) .beer-modal{border:2px solid #111;box-shadow:none}
+html:not([data-theme="fun"]) .kpi{box-shadow:4px 4px 0 rgba(17,17,17,.12)}
+html:not([data-theme="fun"]) .kpi:nth-child(4n+1){background:#F6CFF4}
+html:not([data-theme="fun"]) .kpi:nth-child(4n+2){background:#BFE3F8}
+html:not([data-theme="fun"]) .kpi:nth-child(4n+3){background:#FFEE58}
+html:not([data-theme="fun"]) .kpi:nth-child(4n+4){background:#C9EDB3}
+html:not([data-theme="fun"]) .kpi:hover,
+html:not([data-theme="fun"]) .card:hover{box-shadow:4px 4px 0 rgba(17,17,17,.12)}
+html:not([data-theme="fun"]) .kpi .lbl,
+html:not([data-theme="fun"]) .hero .lbl,
+html:not([data-theme="fun"]) .hero-stat .l{color:#111}
+html:not([data-theme="fun"]) .hero .val,
+html:not([data-theme="fun"]) .kpi .val,
+html:not([data-theme="fun"]) .hero-stat .n{font-weight:800}
+html:not([data-theme="fun"]) .hero .val{font-size:48px}
+html:not([data-theme="fun"]) .card h3{font-size:15px;font-weight:800}
+html:not([data-theme="fun"]) .card h3 .material-symbols-rounded{color:#111}
+html:not([data-theme="fun"]) .gcard{border:2px solid #111;border-top:2px solid #111;box-shadow:none}
+html:not([data-theme="fun"]) .gcard:hover{box-shadow:4px 4px 0 rgba(17,17,17,.12)}
+html:not([data-theme="fun"]) .gimg{border-bottom:2px solid #111}
+html:not([data-theme="fun"]) table.dt th{color:#111;border-bottom:2px solid #111;padding-bottom:8px}
+html:not([data-theme="fun"]) table.dt td{border-top:1px solid #e1e1e1}
+html:not([data-theme="fun"]) table.dt tr:hover td{background:#FBFAF3}
+html:not([data-theme="fun"]) .pill{border:1px solid #111;border-radius:99px;background:#fff;color:#111;padding:2px 10px}
+html:not([data-theme="fun"]) .pill.good{background:#C9EDB3;color:#111}
+html:not([data-theme="fun"]) .pill.amber{background:#FFEE58;color:#111}
+html:not([data-theme="fun"]) .pill.muted{background:#fff;color:#686868;border-color:#c9c9c9}
+html:not([data-theme="fun"]) .pill.warning{background:#F6CFF4;color:#111}
+html:not([data-theme="fun"]) #syncBtn{background:#111;color:#fff;border:2px solid #111}
+html:not([data-theme="fun"]) #syncBtn:hover{background:#FFEE58;color:#111}
+html:not([data-theme="fun"]) .mini-btn,
+html:not([data-theme="fun"]) .pager button,
+html:not([data-theme="fun"]) .chart-expand-btn,
+html:not([data-theme="fun"]) .icon-btn{border:2px solid #111;color:#111;background:#fff;border-radius:99px}
+html:not([data-theme="fun"]) .mini-btn:hover,
+html:not([data-theme="fun"]) .pager button:hover,
+html:not([data-theme="fun"]) .chart-expand-btn:hover,
+html:not([data-theme="fun"]) .icon-btn:hover{background:#FFEE58;color:#111}
+html:not([data-theme="fun"]) .mini-btn.active{background:#111;color:#fff}
+html:not([data-theme="fun"]) .viewtoggle{border:2px solid #111;background:#fff;padding:0;gap:0}
+html:not([data-theme="fun"]) .viewtoggle button{color:#111;border-radius:0}
+html:not([data-theme="fun"]) .viewtoggle button.active{background:#111;color:#fff;box-shadow:none}
+html:not([data-theme="fun"]) .field,
+html:not([data-theme="fun"]) .chart-modal-axis-controls input{border:2px solid #111;background:#fff;border-radius:0}
+html:not([data-theme="fun"]) .field:focus,
+html:not([data-theme="fun"]) .chart-modal-axis-controls input:focus{outline:3px solid #FFEE58;outline-offset:0;border-color:#111}
+/* the score bar: white track with ink fill, as on the site */
+html:not([data-theme="fun"]) .rating-bar{height:10px;width:72px;background:#fff;border:2px solid #111;border-radius:0}
+html:not([data-theme="fun"]) .rating-bar-fill{background:#111;border-radius:0}
+html:not([data-theme="fun"]) .rating-num{font-weight:800}
+html:not([data-theme="fun"]) .toast{background:#111;border-radius:0;box-shadow:4px 4px 0 #FFEE58}
+html:not([data-theme="fun"]) a{color:#111;text-decoration:underline;text-underline-offset:2px}
+html:not([data-theme="fun"]) a.side-btn,
+html:not([data-theme="fun"]) .gcard a{text-decoration:none}
+html:not([data-theme="fun"]) .beer-modal-backdrop{background:rgba(17,17,17,.55)}
+html:not([data-theme="fun"]) .beer-modal-close{border:2px solid #111;background:#fff;box-shadow:none}
+html:not([data-theme="fun"]) .beer-modal-close:hover{background:#FFEE58}
+html:not([data-theme="fun"]) .toggle-track{border:2px solid #111}
+@media (prefers-reduced-motion:reduce){html:not([data-theme="fun"]) *{transition:none!important}}
 
 /* ═══════════════════════════════════════════════════════════════════
    FUN THEME — 70s print, ported from the CV's Fun mode.
@@ -1162,9 +1267,9 @@ html[data-theme="fun"] table.dt th[data-field]{
 // default dashboard renders identically.
 const FAMILY_COLORS = {
   clean: {
-    'IPA':'#d9822b','Pale Ale':'#e3a857','Sour & Fruit':'#b6558c','Ale & Amber':'#a8562f',
-    'Belgian':'#7a5c9e','Lager & Pilsner':'#c9b23a','Stout & Porter':'#4a3428',
-    'Wheat & German':'#5b7a3a','Alcohol-free':'#2383e2','Other':'#8a8272'
+    'IPA':'#F5B97A','Pale Ale':'#FBD9AE','Sour & Fruit':'#F6CFF4','Ale & Amber':'#E8A15C',
+    'Belgian':'#D9D2F6','Lager & Pilsner':'#FFEE58','Stout & Porter':'#6b5b4e',
+    'Wheat & German':'#C9EDB3','Alcohol-free':'#BFE3F8','Other':'#d4d4d4'
   },
   fun: {
     'IPA':'#e2562b','Pale Ale':'#f2b134','Sour & Fruit':'#e8467c','Ale & Amber':'#b3421f',
@@ -1174,18 +1279,18 @@ const FAMILY_COLORS = {
 };
 const PALETTES = {
   clean: {
-    grid:'#ece9e2', tick:'#6b6255',
-    chartFont:"'Plus Jakarta Sans', sans-serif",
-    valueLabelFont:'700 10px "Plus Jakarta Sans", sans-serif',
-    valueLabelFontBig:'700 15px "Plus Jakarta Sans", sans-serif',
-    barRadius:5, barBorder:'transparent', barBorderWidth:0,
-    ratingBars:'#d9822b', abvBars:'#7a5c9e', lagBars:'#2383e2',
-    monthlyLine:'#5b7a3a', monthlyFill:'#eaf2e2',
-    ratingLine:'#d9822b', ratingFill:'#fbead4',
-    discoveryLine:'#d9822b', discoveryFill:'#fbead4', discoveryLine2:'#5b7a3a',
-    bubbleFill:'rgba(217,130,43,.5)', bubbleBorder:'#b8651a', bubbleBorderWidth:1,
-    heatRgb:'217,130,43',
-    sparks:['#d9822b','#5b7a3a','#b6558c','#7a5c9e']
+    grid:'#e1e1e1', tick:'#111111',
+    chartFont:"'Manrope', sans-serif",
+    valueLabelFont:'800 10px "Manrope", sans-serif',
+    valueLabelFontBig:'800 15px "Manrope", sans-serif',
+    barRadius:0, barBorder:'#111111', barBorderWidth:2,
+    ratingBars:'#111111', abvBars:'#F6CFF4', lagBars:'#BFE3F8',
+    monthlyLine:'#111111', monthlyFill:'rgba(255,238,88,.55)',
+    ratingLine:'#111111', ratingFill:'rgba(255,238,88,.55)',
+    discoveryLine:'#111111', discoveryFill:'rgba(255,238,88,.55)', discoveryLine2:'#686868',
+    bubbleFill:'rgba(245,185,122,.75)', bubbleBorder:'#111111', bubbleBorderWidth:2,
+    heatRgb:'245,185,122',
+    sparks:['#111111','#E8A15C','#7a6ad0','#27500A']
   },
   fun: {
     grid:'rgba(59,42,32,.22)', tick:'#3b2a20',
